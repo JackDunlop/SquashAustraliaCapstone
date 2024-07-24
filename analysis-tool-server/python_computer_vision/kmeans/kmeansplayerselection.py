@@ -88,6 +88,8 @@ class Clustering:
     def __init__(self, modelPath):
         self.model = YOLO(modelPath)
   
+
+  # not used
     def firstFrameDetection(self, firstFrame):
         classes = [0]  
         confThresh = 0.6 
@@ -153,7 +155,7 @@ class Clustering:
         
 
         rgbColour = kmeans.cluster_centers_[playerCluster]
-        normalizedRgbColour = rgbColour / 255.0
+        #normalizedRgbColour = rgbColour / 255.0
         
         # flt, ax = plt.subplots(figsize=(2, 2)) 
         # ax.add_patch(plt.Rectangle((0, 0), 1, 1, color=normalizedRgbColour))
@@ -184,7 +186,8 @@ def main():
     imgArray2 = np.array(croppedImages[1])
     playerTwoRGB = getPlayers.kmeans(imgArray2)
     playerRGB.append(playerTwoRGB)
-
+    
+    print(playerRGB)
 
     playerRGBFlat= [int(value) for array in playerRGB for value in array]
 

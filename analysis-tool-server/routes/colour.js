@@ -4,35 +4,27 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-
+// Stolen from video controller
 const videoFileFormats = ['mp4', 'mov', 'avi'];
-
 const findVideoFile = async (match_id) => {
   for (let videoFileFormat of videoFileFormats) {
     let _path = path.join(`${__dirname}../../videos/${match_id}.${videoFileFormat}`);
-
-
+    
     if (fs.existsSync(_path)) return _path;
-  }
 
+  }
   return '';
 }
 
 router.get('/players/get/:match_id', async (req, res) => {
   const match_id = req.params.match_id;
   const videoFilePath = await findVideoFile(match_id);
-
-  //console.log(videoFilePath);
-  //console.log(match_id);
-
-
   const pythonProcess = spawn('python', ['./python_computer_vision/kmeans/kmeansplayerselection.py', videoFilePath]); // kmeans python script will take args video path
-
   let scriptOutput = '';
 
   // Handle stdout data
   pythonProcess.stdout.on('data', (data) => {
-    console.log(`stdout: ${data}`);
+    //console.log(`stdout: ${data}`);
     scriptOutput += data.toString();
   });
 

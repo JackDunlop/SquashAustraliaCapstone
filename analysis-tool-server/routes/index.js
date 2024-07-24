@@ -4,6 +4,7 @@ const matchRouter = require('./match');
 const videoRouter = require('./video');
 const annotationRouter = require('./annotate');
 const colourRouter = require('./colour');
+const poseRouter = require('./pose')
 
 // index route
 router.get('/', (req, res) => {
@@ -23,5 +24,7 @@ router.use('/annotate', annotationRouter);
 // colour router
 router.use('/colour', colourRouter);
 
+
+router.use('/pose', poseRouter);
 
 module.exports = router;

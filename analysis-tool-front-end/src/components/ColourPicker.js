@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from 'react';
 import { withRouter } from 'react-router-dom';
 import styles from "./colorPicker.module.css";
+import { ChooseImageButton } from "./ChooseImageButton";
 
 const axios = require('axios').default;
 
@@ -84,7 +85,7 @@ function ColourPick(props) {
         <div class={styles.ImageSelection}>
           <h5><b>Choose Image By Selecting Below Text:</b></h5>
           <div className={styles.formSectionImage}>
-            <input onChange={handleFileInput} type="file" accept="image/*" />
+            <ChooseImageButton onFileInput={handleFileInput} />
           </div> 
         </div>        
         <div class={styles.Player1Selection}>

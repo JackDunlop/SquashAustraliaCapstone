@@ -62,6 +62,8 @@ export default function MainMenu(props) {
         </h2>
       </div>
 
+      {!matches.length && <div className="px-5 py-3 col-span-12">No matches found.</div>}
+
       <div className="grid grid-cols-12">
         {matches.map((match) => {
           return (

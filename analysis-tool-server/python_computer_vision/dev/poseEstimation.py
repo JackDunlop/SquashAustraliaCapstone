@@ -121,17 +121,31 @@ class GetKeypoint(Enum):
 
 
 def calculateAngle(p1, p2, p3):
-
-    v1 = np.array(p1) - np.array(p2)
-    v2 = np.array(p3) - np.array(p2)
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    p3 = np.array(p3)
     
+    if np.linalg.norm(p1) == 0 or np.linalg.norm(p2) == 0 or np.linalg.norm(p3) == 0:
+        #print("One of the points is a zero vector")
+        return None
 
-    angle_rad = np.arccos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+    v1 = p1 - p2
+    v2 = p3 - p2
+    
+    norm_v1 = np.linalg.norm(v1)
+    norm_v2 = np.linalg.norm(v2)
+    
+    if norm_v1 == 0 or norm_v2 == 0:
+        #print("One of the vectors is a zero vector")
+        return None
 
+    cos_theta = np.dot(v1, v2) / (norm_v1 * norm_v2)
+    cos_theta = np.clip(cos_theta, -1.0, 1.0)
+    
+    angle_rad = np.arccos(cos_theta)
     angle_deg = np.degrees(angle_rad)
     
     return angle_deg
-
 
 
 def poseEstimation(videoPath):
@@ -148,13 +162,14 @@ def poseEstimation(videoPath):
         ret, frame = cap.read()
         if not ret:
             break
-
+        frame_resized = cv2.resize(frame, (640, 640))
         frameTimestamp = getFrameTimestamp(cap)
-        detection = getDetection(model, frame, confThresh)
+        detection = getDetection(model, frame_resized, confThresh)
         if detection:
-            processDetection(detection, frameTimestamp, frameData,frame)
+            processDetection(detection, frameTimestamp, frameData,frame_resized)
         
-        #cv2.imshow('Frame', frame)
+        #clear
+        cv2.imshow('Frame', frame_resized)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -180,27 +195,30 @@ def processDetection(detection, frameTimestamp, frameData, frame):
     if not detection[0].boxes:
         return
 
-    track_ids = detection[0].boxes.id.cpu().numpy()  # Convert to numpy array
+    track_ids = detection[0].boxes.id.cpu().numpy()  
     for track_id, kptArray in zip(track_ids, keypoints):
-        keypointData = extractKeypointData(kptArray, frame)
+        keypointData = extractKeypointData(kptArray, frame, track_id)
         calculateAngleJoints(keypointData,'LEFT_SHOULDER','LEFT_ELBOW','LEFT_WRIST','LEFT_ARM_ANGLE',frame)
         calculateAngleJoints(keypointData,'RIGHT_SHOULDER','RIGHT_ELBOW','RIGHT_WRIST','RIGHT_ARM_ANGLE',frame)
         calculateAngleJoints(keypointData,'LEFT_HIP','LEFT_KNEE','LEFT_ANKLE','LEFT_LEG_ANGLE',frame)
         calculateAngleJoints(keypointData,'RIGHT_HIP','RIGHT_KNEE','RIGHT_ANKLE','RIGHT_LEG_ANGLE',frame)
+        
         frameData.append({
             'track_id': int(track_id),
             'timestamp': frameTimestamp,
             'keypoints': keypointData
         })
 
-def extractKeypointData(kptArray, frame):
+def extractKeypointData(kptArray, frame, track_id):
     kptArray = kptArray.cpu().numpy()
     keypointData = {}
     for pointIndex, point in enumerate(kptArray):
         x, y = int(point[0]), int(point[1])
         keypointName = GetKeypoint(pointIndex).name
         keypointData[keypointName] = [x, y]
-        #cv2.putText(frame, f"{pointIndex}", (x, y + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        if keypointName == "LEFT_SHOULDER":
+
+            cv2.putText(frame, f"{track_id}", (x, y - 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
         
     return keypointData
 
@@ -208,19 +226,22 @@ def calculateAngleJoints(keypointData, p1String, p2String, p3string, specifcJoin
     p1 = keypointData[p1String]
     p2 = keypointData[p2String]
     p3 = keypointData[p3string]
+    
     if any(np.array_equal(point, [0, 0]) for point in [p1, p2, p3]):
-        keypointData[specifcJoint] = 0 
+        #print(p1,p2,p3)
+        keypointData[specifcJoint] = "Can't Calculate Angle" 
     else:
         angle = calculateAngle(p1, p2, p3)
         keypointData[specifcJoint] = angle 
-        #if specifcJoint == 'LEFT_ARM_ANGLE':
-            #cv2.putText(frame, f"{specifcJoint}: {angle:.2f}", (p2[0], p2[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (124,252,0), 2)
+        if specifcJoint == 'LEFT_ARM_ANGLE':
+            
+            cv2.putText(frame, f"{specifcJoint}: {angle:.2f}", (p2[0], p2[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (124,252,0), 2)
             
 
 def finalizeVideoProcessing(cap, frameData):
     cap.release()
     cv2.destroyAllWindows()
-    with open('frame_data.json', 'w') as f:
+    with open('frame_data.json', 'w') as f: 
         json.dump(frameData, f, indent=2)
                    
 def main():
@@ -235,7 +256,7 @@ def main():
     # Handling Video
     start_time = time.time()
     
-    pose = poseEstimation(args.videoPath)
+    poseEstimation(args.videoPath)
     
     # End timer
     end_time = time.time()

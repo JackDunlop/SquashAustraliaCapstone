@@ -126,7 +126,6 @@ def calculateAngle(p1, p2, p3):
     p3 = np.array(p3)
     
     if np.linalg.norm(p1) == 0 or np.linalg.norm(p2) == 0 or np.linalg.norm(p3) == 0:
-        #print("One of the points is a zero vector")
         return None
 
     v1 = p1 - p2
@@ -136,7 +135,6 @@ def calculateAngle(p1, p2, p3):
     norm_v2 = np.linalg.norm(v2)
     
     if norm_v1 == 0 or norm_v2 == 0:
-        #print("One of the vectors is a zero vector")
         return None
 
     cos_theta = np.dot(v1, v2) / (norm_v1 * norm_v2)

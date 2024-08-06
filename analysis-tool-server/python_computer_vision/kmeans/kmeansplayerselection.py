@@ -188,11 +188,8 @@ def main():
     
     playerRGBFlat= [int(value) for array in playerRGB for value in array]
 
-    data = {
-    "RGB": playerRGBFlat
-    }
-    json_string = json.dumps(data, indent=2)  
-    print(json_string)
+   
+    print(playerRGBFlat)
    
 
 if __name__ == "__main__":

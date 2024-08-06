@@ -6,8 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
 from PIL import Image
-import time
-import concurrent.futures
+import json
 
 ''' 
     **********************************************************************************************************************************************************************************
@@ -187,22 +186,13 @@ def main():
     playerTwoRGB = getPlayers.kmeans(imgArray2)
     playerRGB.append(playerTwoRGB)
     
-    print(playerRGB)
-
     playerRGBFlat= [int(value) for array in playerRGB for value in array]
 
-    # print(f"Players RGB flat {playerRGBFlat}")
-    # print(f"Players RGB flat size {sys.getsizeof(playerRGBFlat)}")
-
-    playersRGBString = '#'.join(map(str, playerRGBFlat))
-    # Will send playersRGBString
-
-    print(f"{playersRGBString}")
-    #print(f"Players RGB String Size {sys.getsizeof(playersRGBString)}")
-    #print(f"Players RGB String Size Max {sys.getsizeof('255#255#255#255#255#255')}")
-    # end_time = time.time()
-    # elapsed_time = end_time - start_time
-    # print(f"Execution time: {elapsed_time:.2f} seconds")
+    data = {
+    "RGB": playerRGBFlat
+    }
+    json_string = json.dumps(data, indent=2)  
+    print(json_string)
    
 
 if __name__ == "__main__":

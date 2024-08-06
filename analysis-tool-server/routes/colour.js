@@ -9,7 +9,7 @@ const videoFileFormats = ['mp4', 'mov', 'avi'];
 const findVideoFile = async (match_id) => {
   for (let videoFileFormat of videoFileFormats) {
     let _path = path.join(`${__dirname}../../videos/${match_id}.${videoFileFormat}`);
-    
+
     if (fs.existsSync(_path)) return _path;
 
   }
@@ -34,7 +34,9 @@ router.get('/players/get/:match_id', async (req, res) => {
     if (code === 0) {
       // Clean the script output by removing \r and \n
       const cleanedOutput = scriptOutput.replace(/[\r\n]/g, '');
-      res.status(200).json({ message: 'Process completed', output: cleanedOutput });
+      let jsonOutput = JSON.parse(cleanedOutput);
+      const { PlayerOne, PlayerTwo } = jsonOutput;
+      res.status(200).json({ message: 'Process completed', PlayerOne, PlayerTwo });
     } else {
       res.status(500).json({ message: 'Process failed', code: code });
     }

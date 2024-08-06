@@ -176,20 +176,18 @@ def main():
 
     croppedImages = getPlayers.cropPlayersOut([firstFramePlayerDetected], firstFrame)
 
-    playerRGB = []
+    playerOneRGB = getPlayers.kmeans(np.array(croppedImages[0])).astype(int).tolist()
+    playerTwoRGB = getPlayers.kmeans(np.array(croppedImages[1])).astype(int).tolist()
 
-    imgArrayOne = np.array(croppedImages[0])
-    playerOneRGB = getPlayers.kmeans(imgArrayOne)
-    playerRGB.append(playerOneRGB)
-
-    imgArray2 = np.array(croppedImages[1])
-    playerTwoRGB = getPlayers.kmeans(imgArray2)
-    playerRGB.append(playerTwoRGB)
     
-    playerRGBFlat= [int(value) for array in playerRGB for value in array]
-
    
-    print(playerRGBFlat)
+      
+    players =  {
+        "PlayerOne": playerOneRGB,
+        "PlayerTwo": playerTwoRGB
+    }
+    print(json.dumps(players, indent=2))
+
    
 
 if __name__ == "__main__":

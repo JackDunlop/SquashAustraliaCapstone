@@ -66,10 +66,6 @@ class Arguments:
         self.uniqueIdentifier = uniqueIdentifier
         self.videoDataOutPutPath = videoDataOutPutPath
 
-    def print_arguments(self):
-        print(f"Video Path: {self.videoPath}")
-        print(f"Unique Identifier: {self.uniqueIdentifier}")
-
     def checkArgumentLength(argv):
         if len(argv) == 4:
             args = Arguments(argv[1], argv[2], argv[3])
@@ -146,37 +142,43 @@ def calculateAngle(p1, p2, p3):
     return angle_deg
 
 
-def poseEstimation(videoPath,outputDataFolderPath,match_id):
+def poseEstimation(videoPath,outputDataFolderPath):
+    
     model_path = 'models/yolov8m-pose.pt'  
     model = YOLO(model_path) 
     confThresh = 0.80
-
+    
     cap = initialiseVideoCapture(videoPath)
+    
     if not cap:
-        return
-
+         return
+   
     frameData = []
     while True:
         ret, frame = cap.read()
         if not ret:
             break
+    
         frame_resized = cv2.resize(frame, (640, 640))
         frameTimestamp = getFrameTimestamp(cap)
         detection = getDetection(model, frame_resized, confThresh)
+        
         if detection:
             processDetection(detection, frameTimestamp, frameData,frame_resized)
         
-        #clear
-       # cv2.imshow('Frame', frame_resized)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+    #     #clear
+        # cv2.imshow('Frame', frame_resized)
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
+    
+    finalizeVideoProcessing(cap, frameData,outputDataFolderPath,videoPath)
+    
 
-    finalizeVideoProcessing(cap, frameData,outputDataFolderPath,match_id)
 
 def initialiseVideoCapture(videoPath):
     cap = cv2.VideoCapture(videoPath)
     if not cap.isOpened():
-        print("Error: Could not open video.")
+        print(json.dumps("Error: Could not open video.", indent=2))
         return None
     return cap
 
@@ -234,37 +236,27 @@ def calculateAngleJoints(keypointData, p1String, p2String, p3string, specifcJoin
         if specifcJoint == 'LEFT_ARM_ANGLE':
             
             cv2.putText(frame, f"{specifcJoint}: {angle:.2f}", (p2[0], p2[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (124,252,0), 2)
-            
 
-def finalizeVideoProcessing(cap, frameData,outputDataFolderPath,match_id):
+
+def get_match_id_from_video(video_path):
+    # Extract the filename without the extension
+    base_name = os.path.basename(video_path)
+    match_id = os.path.splitext(base_name)[0]
+    return match_id            
+
+def finalizeVideoProcessing(cap, frameData,outputDataFolderPath,videoPath):
     cap.release()
     cv2.destroyAllWindows()
-    if not os.path.exists(outputDataFolderPath):
-        os.makedirs(outputDataFolderPath)
-    json_file_path = os.path.join(outputDataFolderPath, f'{match_id}.json')
-    print(json_file_path)
-    with open(json_file_path, 'w') as f:
+    match_id = get_match_id_from_video(videoPath)
+    with open(f'poseEstimationData/{match_id}.json', 'w') as f:
         json.dump(frameData, f, indent=2)
                    
 def main():
-
-
-    # Handling Arguments
-    args = Arguments.checkArgumentLength(sys.argv)
-    args.checkPathExists()
-    match_id = sys.argv[2]
-    outputDataFolderPath = sys.argv[3]
     
-    #start_time = time.time()
-    
-    poseEstimation(args.videoPath,outputDataFolderPath,match_id)
-    
-    # End timer
-    #end_time = time.time()
-    
-   # elapsed_time = end_time - start_time
-    #print(f"Time taken to read video: {elapsed_time:.2f} seconds")
-    #print(f"{outputDataFolderPath}")
+    outputDataFolderPath = sys.argv[1]
+    videoPath = sys.argv[2]
+    poseEstimation(videoPath,outputDataFolderPath)
+   
    
 
 if __name__ == "__main__":

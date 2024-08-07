@@ -16,23 +16,21 @@ const findVideoFile = async (match_id) => {
   return '';
 }
 
-router.get('/players/get/:match_id', async (req, res) => {
+router.post('/players/:match_id', async (req, res) => {
   const match_id = req.params.match_id;
   const videoFilePath = await findVideoFile(match_id);
   const pythonProcess = spawn('python', ['./python_computer_vision/kmeans/kmeansplayerselection.py', videoFilePath]); // kmeans python script will take args video path
   let scriptOutput = '';
 
-  // Handle stdout data
+
   pythonProcess.stdout.on('data', (data) => {
-    //console.log(`stdout: ${data}`);
     scriptOutput += data.toString();
   });
 
-  // Handle process exit
+
   pythonProcess.on('close', (code) => {
     console.log(`child process exited with code ${code}`);
     if (code === 0) {
-      // Clean the script output by removing \r and \n
       const cleanedOutput = scriptOutput.replace(/[\r\n]/g, '');
       let jsonOutput = JSON.parse(cleanedOutput);
       const { PlayerOne, PlayerTwo } = jsonOutput;
@@ -42,7 +40,6 @@ router.get('/players/get/:match_id', async (req, res) => {
     }
   });
 
-  // Handle process error
   pythonProcess.on('error', (err) => {
     console.error(`Failed to start process: ${err}`);
     res.status(500).json({ message: 'Failed to start process', error: err });

@@ -46,8 +46,8 @@ class UniqueIdentifierIsntUnique(ApplicationError):
         super().__init__(f"{message}: {uniqueIdentifier}")
 
 class InvalidRequiredArgumentsError(ApplicationError):
-    """Exception raised when two arguments have not been passed in."""
-    def __init__(self, arguments, message="Must have two passed in arguments."):
+    """Exception raised when three arguments have not been passed in."""
+    def __init__(self, arguments, message="Must have three passed in arguments."):
         self.arguments = arguments[1:]  # skip the script name
         self.message = message
         super().__init__(f"{message}: Arguments Passed in {self.arguments}")
@@ -61,18 +61,18 @@ class InvalidRequiredArgumentsError(ApplicationError):
 '''
 
 class Arguments:
-    def __init__(self, videoPath, uniqueIdentifier):
+    def __init__(self, videoPath, uniqueIdentifier,videoDataOutPutPath):
         self.videoPath = videoPath
         self.uniqueIdentifier = uniqueIdentifier
+        self.videoDataOutPutPath = videoDataOutPutPath
 
     def print_arguments(self):
         print(f"Video Path: {self.videoPath}")
         print(f"Unique Identifier: {self.uniqueIdentifier}")
 
     def checkArgumentLength(argv):
-        if len(argv) == 3:
-            args = Arguments(argv[1], argv[2])
-           # args.print_arguments()
+        if len(argv) == 4:
+            args = Arguments(argv[1], argv[2], argv[3])
             return args
         else:
             raise InvalidRequiredArgumentsError(argv)
@@ -146,7 +146,7 @@ def calculateAngle(p1, p2, p3):
     return angle_deg
 
 
-def poseEstimation(videoPath):
+def poseEstimation(videoPath,outputDataFolderPath,match_id):
     model_path = 'models/yolov8m-pose.pt'  
     model = YOLO(model_path) 
     confThresh = 0.80
@@ -167,11 +167,11 @@ def poseEstimation(videoPath):
             processDetection(detection, frameTimestamp, frameData,frame_resized)
         
         #clear
-        cv2.imshow('Frame', frame_resized)
+       # cv2.imshow('Frame', frame_resized)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    finalizeVideoProcessing(cap, frameData)
+    finalizeVideoProcessing(cap, frameData,outputDataFolderPath,match_id)
 
 def initialiseVideoCapture(videoPath):
     cap = cv2.VideoCapture(videoPath)
@@ -236,10 +236,14 @@ def calculateAngleJoints(keypointData, p1String, p2String, p3string, specifcJoin
             cv2.putText(frame, f"{specifcJoint}: {angle:.2f}", (p2[0], p2[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (124,252,0), 2)
             
 
-def finalizeVideoProcessing(cap, frameData):
+def finalizeVideoProcessing(cap, frameData,outputDataFolderPath,match_id):
     cap.release()
     cv2.destroyAllWindows()
-    with open('frame_data.json', 'w') as f: 
+    if not os.path.exists(outputDataFolderPath):
+        os.makedirs(outputDataFolderPath)
+    json_file_path = os.path.join(outputDataFolderPath, f'{match_id}.json')
+    print(json_file_path)
+    with open(json_file_path, 'w') as f:
         json.dump(frameData, f, indent=2)
                    
 def main():
@@ -248,22 +252,19 @@ def main():
     # Handling Arguments
     args = Arguments.checkArgumentLength(sys.argv)
     args.checkPathExists()
-   #outputFolderPath = args.checkOutputFolderExists()
     match_id = sys.argv[2]
-    #print(match_id)
-    # Handling Video
-    start_time = time.time()
+    outputDataFolderPath = sys.argv[3]
     
-    poseEstimation(args.videoPath)
+    #start_time = time.time()
+    
+    poseEstimation(args.videoPath,outputDataFolderPath,match_id)
     
     # End timer
-    end_time = time.time()
+    #end_time = time.time()
     
-    elapsed_time = end_time - start_time
-    print(f"Time taken to read video: {elapsed_time:.2f} seconds")
-    # videoFrames, height, width = readVideo(args.videoPath)
-    # #print(f"Number of frames read: {len(videoFrames)}")
-    # print(f"Frame Dimensions: Width = {width}, Height = {height}")
+   # elapsed_time = end_time - start_time
+    #print(f"Time taken to read video: {elapsed_time:.2f} seconds")
+    #print(f"{outputDataFolderPath}")
    
 
 if __name__ == "__main__":

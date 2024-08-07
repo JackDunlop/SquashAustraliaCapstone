@@ -21,5 +21,9 @@ router.get('/get/:match_id', async (req, res) => {
     res.status(200).json({ message: 'Done' });
 
 });
+router.get('/analytics/',(req, res) => {
+    const data = { message: 'Hello' };
+    res.json(data);
+});
 
 module.exports = router;

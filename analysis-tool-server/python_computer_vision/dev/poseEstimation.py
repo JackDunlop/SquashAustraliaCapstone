@@ -1,10 +1,3 @@
-
-''' 
-    **********************************************************************************************************************************************************************************
-    *************************************************************************** IMPORTS **********************************************************************************************
-    **********************************************************************************************************************************************************************************
- '''
-
 import sys
 import os
 import cv2
@@ -224,12 +217,11 @@ def finalizeVideoProcessing(cap, frameData):
         json.dump(frameData, f, indent=2)
                    
 def main():
-
-
+    filepath = os.curdir()   
     # Handling Arguments
     args = Arguments.checkArgumentLength(sys.argv)
     args.checkPathExists()
-   #outputFolderPath = args.checkOutputFolderExists()
+    # outputFolderPath = args.checkOutputFolderExists()
     match_id = sys.argv[2]
     #print(match_id)
     # Handling Video
@@ -248,131 +240,5 @@ def main():
    
 
 if __name__ == "__main__":
-    main()
-
-
-
-
-# OLD
-
-        #     image2d1 = enhancedImage1.reshape(-1, 3)
-        #     image2d2 = enhancedImage2.reshape(-1, 3)
-
-        #     kmeans1 = KMeans(n_clusters=2, random_state=0)
-        #     kmeans2 = KMeans(n_clusters=2, random_state=0)
-
-        #     kmeans1.fit(image2d1)
-        #     kmeans2.fit(image2d2)
-
-        #     labels1 = kmeans1.labels_
-        #     labels2 = kmeans2.labels_
-
-        #     clusteredImage1 = labels1.reshape(enhancedImage1.shape[0], enhancedImage1.shape[1])
-        #     clusteredImage2 = labels2.reshape(enhancedImage2.shape[0], enhancedImage2.shape[1])
-
-        #     cornerCluster1 = [clusteredImage1[0, 0], clusteredImage1[0, -1], clusteredImage1[-1, 0], clusteredImage1[-1, -1]]
-        #     cornerCluster2 = [clusteredImage2[0, 0], clusteredImage2[0, -1], clusteredImage2[-1, 0], clusteredImage2[-1, -1]]
-
-        #     nonPlayerCluster1 = max(set(cornerCluster1), key=cornerCluster1.count)
-        #     nonPlayerCluster2 = max(set(cornerCluster2), key=cornerCluster2.count)
-
-        #     playerCluster1 = 1 - nonPlayerCluster1
-        #     playerCluster2 = 1 - nonPlayerCluster2
-
-        #     kmeans1.cluster_centers_[playerCluster1]
-        #     kmeans2.cluster_centers_[playerCluster2]
-
-        #     rgbColour1 = kmeans1.cluster_centers_[playerCluster1]
-        #     rgbColour2 = kmeans2.cluster_centers_[playerCluster2]
-
-            
-        #     r1, g1, b1 = int(rgbColour1[0]), int(rgbColour1[1]), int(rgbColour1[2])
-        #     print(f"{r1}, {g1}, {b1}")
-        #     r2, g2, b2 = int(rgbColour2[0]), int(rgbColour2[1]), int(rgbColour2[2])
-        #     print(f"{r2}, {g2}, {b2}")
-        #     normalizedRgbColour1 = rgbColour1 / 255.0
-        #     normalizedRgbColour2 = rgbColour2 / 255.0
-
-        #    # Plot the images and color patches
-        #     plt.figure(figsize=(12, 8))
-            
-            # # Original Image 1
-            # plt.subplot(3, 3, 1)
-            # plt.imshow(enhancedImage1)
-            # plt.title('Player 1 - Original')
-            # plt.axis('off')
-            
-            # # Original Image 2
-            # plt.subplot(3, 3, 2)
-            # plt.imshow(enhancedImage2)
-            # plt.title('Player 2 - Original')
-            # plt.axis('off')
-
-        #     # Clustered Image 1
-        #     plt.subplot(3, 3, 4)
-        #     plt.imshow(clusteredImage1)
-        #     plt.title('Player 1 - Clustered')
-        #     plt.axis('off')
-
-        #     # Clustered Image 2
-        #     plt.subplot(3, 3, 5)
-        #     plt.imshow(clusteredImage2)
-        #     plt.title('Player 2 - Clustered')
-        #     plt.axis('off')
-
-        #     # RGB Color Patch for Player 1
-        #     plt.subplot(3, 3, 7)
-        #     plt.gca().add_patch(plt.Rectangle((0, 0), 1, 1, color=normalizedRgbColour1))
-        #     plt.title(f'Color 1 ({r1},{g1},{b1})')
-        #     plt.axis('off')
-
-        #     # RGB Color Patch for Player 2
-        #     plt.subplot(3, 3, 8)
-        #     plt.gca().add_patch(plt.Rectangle((0, 0), 1, 1, color=normalizedRgbColour2))
-        #     plt.title(f'Color 2 ({r2},{g2},{b2})')
-        #     plt.axis('off')
-
-            # Display the plot
-            # plt.tight_layout()
-            # plt.show()
-
-
-
-
-# def enhanceImageColours(image):
-#     hsvImage = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    
-#     # Increase the saturation and value components to enhance colors
-#     hsvImage[:, :, 1] = cv2.add(hsvImage[:, :, 1], 50)
-#     hsvImage[:, :, 2] = cv2.add(hsvImage[:, :, 2], 50)
-    
-#     enhancedImage = cv2.cvtColor(hsvImage, cv2.COLOR_HSV2RGB)
-#     return enhancedImage
-
-
-
-# def processPlayerImage(frame, bbox):
-#     croppedImage = cropImage(frame, bbox)
-#     # topHalfImage = croppedImage[0:int(croppedImage.shape[0]/2), :]
-#     # enhancedImage = enhanceImageColours(topHalfImage)
-#     return croppedImage
-
-# def getBoundingBox(box):
-#     return list(map(int, box.tolist()))
-    
-# def cropImage(frame, bbox):
-#     pilImage = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-#     croppedImage = pilImage.crop((bbox[0], bbox[1], bbox[2], bbox[3]))
-#     return np.array(croppedImage)
-
-# def croppedPlayers(results, frame):
-    
-#     for result in results:
-#         if len(result.boxes.xyxy) > 1:
-#             bbox1 = getBoundingBox(result.boxes.xyxy[0])
-#             bbox2 = getBoundingBox(result.boxes.xyxy[1])
-            
-#             enhancedImage1 = processPlayerImage(frame, bbox1)
-#             enhancedImage2 = processPlayerImage(frame, bbox2)
-            
+    main()           
     

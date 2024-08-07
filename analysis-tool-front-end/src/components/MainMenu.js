@@ -96,6 +96,11 @@ export default function MainMenu(props) {
                         Edit
                       </button>
                     </a>
+                    <a href={'/analytics/' + match.id}>
+                      <button className="bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 mx-1">
+                        Analytics
+                      </button>
+                    </a>
                     <button
                       onClick={() => removeMatch(match.id)}
                       className="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 mx-1"

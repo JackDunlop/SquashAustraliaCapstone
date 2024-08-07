@@ -8,13 +8,13 @@ import ViewVideo from './components/ViewVideo';
 import CourtBounds from './components/NewMatchCourtBounds';
 import ColourPicker from './components/ColourPicker';
 import AllStatistics from './components/AllStatistics';
-
+import ViewAnalytics from './components/ViewAnalytics';
 
 //<Route path="/new/canvas">
 //<CanvasTest baseUrl={baseUrl} />
 //</Route>
 function App() {
-  const baseUrl = 'http://localhost:3001';
+  const baseUrl = 'http://localhost:8000';
 
   return (
     <div className="App">
@@ -46,6 +46,9 @@ function App() {
         </Route>
         <Route path="/all/stats">
             <AllStatistics baseUrl={baseUrl} />
+        </Route>        
+        <Route path="/analytics/:id">
+          <ViewAnalytics baseUrl={baseUrl} />
         </Route>
       </Router>
     </div>

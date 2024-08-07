@@ -20,10 +20,8 @@ router.use('/video', videoRouter);
 // annotation router
 router.use('/annotate', annotationRouter);
 
-
 // colour router
 router.use('/colour', colourRouter);
-
 
 router.use('/pose', poseRouter);
 

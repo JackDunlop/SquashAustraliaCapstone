@@ -22,7 +22,7 @@ const findPathOutputData = async () => {
 
 }
 
-router.post('/:match_id', async (req, res) => {
+router.get('/:match_id', async (req, res) => {
     try {
         const match_id = req.params.match_id;
         const videoFilePath = await findVideoFileMatchID(match_id);

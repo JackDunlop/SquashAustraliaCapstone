@@ -183,7 +183,7 @@ def initialiseVideoCapture(videoPath):
     return cap
 
 def getFrameTimestamp(cap):
-    frameTimestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000  # Convert milliseconds to seconds
+    frameTimestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000  
     return f"{frameTimestamp:.2f}s"
 
 def getDetection(model, frame, confThresh):
@@ -248,7 +248,8 @@ def finalizeVideoProcessing(cap, frameData,outputDataFolderPath,videoPath):
     cap.release()
     cv2.destroyAllWindows()
     match_id = get_match_id_from_video(videoPath)
-    with open(f'poseEstimationData/{match_id}.json', 'w') as f:
+    filesave = f'poseEstimationData/{match_id}.json'
+    with open(filesave, 'w') as f:
         json.dump(frameData, f, indent=2)
                    
 def main():

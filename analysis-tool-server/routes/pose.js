@@ -27,7 +27,6 @@ router.post('/:match_id', async (req, res) => {
         const match_id = req.params.match_id;
         const videoFilePath = await findVideoFileMatchID(match_id);
         const outPutDataPath = await findPathOutputData();
-        console.log(videoFilePath);
 
         if (!videoFilePath) {
             return res.status(400).json({ message: 'Video file not found' });

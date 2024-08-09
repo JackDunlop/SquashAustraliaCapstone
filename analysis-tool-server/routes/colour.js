@@ -17,7 +17,7 @@ const findVideoFileMatchID = async (match_id) => {
 }
 
 
-router.post('/players/:match_id', async (req, res) => {
+router.get('/players/:match_id', async (req, res) => {
   const match_id = req.params.match_id;
   const videoFilePath = await findVideoFileMatchID(match_id);
 

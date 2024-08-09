@@ -141,38 +141,52 @@ def calculateAngle(p1, p2, p3):
     
     return angle_deg
 
-
-def poseEstimation(videoPath,outputDataFolderPath):
-    
+def poseEstimation(videoPath):
     model_path = 'models/yolov8m-pose.pt'  
     model = YOLO(model_path) 
     confThresh = 0.80
-    
+    modelClass = [0]
     cap = initialiseVideoCapture(videoPath)
     
     if not cap:
-         return
-   
+        return
+
+    
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    match_id = getMatchIDFromVideo(videoPath)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    filesave = os.path.join(script_dir, '..', '..', 'poseOutputVideo', f'{match_id}.mp4')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  
+    out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
+
     frameData = []
     while True:
         ret, frame = cap.read()
         if not ret:
             break
-    
+        
         frame_resized = cv2.resize(frame, (640, 640))
         frameTimestamp = getFrameTimestamp(cap)
-        detection = getDetection(model, frame_resized, confThresh)
+        detection = getDetection(model, frame, confThresh, modelClass)
         
-        if detection:
-            processDetection(detection, frameTimestamp, frameData,frame_resized)
+        if detection is None:
+            continue
+
+        processDetection(detection, frameTimestamp, frameData, frame)
+
         
-    #     #clear
-        # cv2.imshow('Frame', frame_resized)
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break
-    
-    finalizeVideoProcessing(cap, frameData,outputDataFolderPath,videoPath)
-    
+        out.write(frame)
+        
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+
+    finalizeVideoProcessing(cap, frameData, videoPath)
+    out.release()
+
 
 
 def initialiseVideoCapture(videoPath):
@@ -186,15 +200,22 @@ def getFrameTimestamp(cap):
     frameTimestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000  
     return f"{frameTimestamp:.2f}s"
 
-def getDetection(model, frame, confThresh):
-    person = [0]
-    return model.track(frame, classes=person, conf=confThresh, show=False, verbose=False, persist=True, tracker="bytetrack.yaml")
+def getDetection(model, frame, confThresh, modelClass):
+
+    return model.track(frame,
+                        classes=modelClass,
+                          conf=confThresh,
+                            show=False,
+                            verbose=False, 
+                            persist=True, 
+                            tracker="bytetrack.yaml",
+                              save=False)
 
 def processDetection(detection, frameTimestamp, frameData, frame):
-    keypoints = detection[0].keypoints.xy
-    if not detection[0].boxes:
+   
+    if detection[0].boxes is None or detection[0].boxes.id is None:
         return
-
+    keypoints = detection[0].keypoints.xy
     track_ids = detection[0].boxes.id.cpu().numpy()  
     for track_id, kptArray in zip(track_ids, keypoints):
         keypointData = extractKeypointData(kptArray, frame, track_id)
@@ -216,9 +237,9 @@ def extractKeypointData(kptArray, frame, track_id):
         x, y = int(point[0]), int(point[1])
         keypointName = GetKeypoint(pointIndex).name
         keypointData[keypointName] = [x, y]
-        if keypointName == "LEFT_SHOULDER":
-
-            cv2.putText(frame, f"{track_id}", (x, y - 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        cv2.circle(frame, (x, y), 3, (0, 255, 0), -1)
+        # if keypointName == "LEFT_SHOULDER":
+        #     cv2.putText(frame, f"{track_id}", (x, y - 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
         
     return keypointData
 
@@ -228,164 +249,34 @@ def calculateAngleJoints(keypointData, p1String, p2String, p3string, specifcJoin
     p3 = keypointData[p3string]
     
     if any(np.array_equal(point, [0, 0]) for point in [p1, p2, p3]):
-        #print(p1,p2,p3)
         keypointData[specifcJoint] = "Can't Calculate Angle" 
     else:
         angle = calculateAngle(p1, p2, p3)
         keypointData[specifcJoint] = angle 
-        if specifcJoint == 'LEFT_ARM_ANGLE':
-            
-            cv2.putText(frame, f"{specifcJoint}: {angle:.2f}", (p2[0], p2[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (124,252,0), 2)
+        # if specifcJoint == 'RIGHT_ARM_ANGLE':
+        #     cv2.putText(frame, f"{specifcJoint}: {angle:.2f}", (p2[0], p2[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (124,252,0), 2)
 
 
-def get_match_id_from_video(video_path):
-    # Extract the filename without the extension
-    base_name = os.path.basename(video_path)
-    match_id = os.path.splitext(base_name)[0]
+def getMatchIDFromVideo(video_path):
+    baseName = os.path.basename(video_path)
+    match_id = os.path.splitext(baseName)[0]
     return match_id            
 
-def finalizeVideoProcessing(cap, frameData,outputDataFolderPath,videoPath):
+def finalizeVideoProcessing(cap, frameData,videoPath):
     cap.release()
     cv2.destroyAllWindows()
-    match_id = get_match_id_from_video(videoPath)
-    filesave = f'poseEstimationData/{match_id}.json'
+    match_id = getMatchIDFromVideo(videoPath)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    filesave = os.path.join(script_dir, '..', '..', 'poseEstimationData', f'{match_id}.json')
     with open(filesave, 'w') as f:
         json.dump(frameData, f, indent=2)
-                   
+
 def main():
-    
-    outputDataFolderPath = sys.argv[1]
-    videoPath = sys.argv[2]
-    poseEstimation(videoPath,outputDataFolderPath)
+    videoPath = sys.argv[1]
+    poseEstimation(videoPath)
    
    
 
 if __name__ == "__main__":
     main()
 
-
-
-
-# OLD
-
-        #     image2d1 = enhancedImage1.reshape(-1, 3)
-        #     image2d2 = enhancedImage2.reshape(-1, 3)
-
-        #     kmeans1 = KMeans(n_clusters=2, random_state=0)
-        #     kmeans2 = KMeans(n_clusters=2, random_state=0)
-
-        #     kmeans1.fit(image2d1)
-        #     kmeans2.fit(image2d2)
-
-        #     labels1 = kmeans1.labels_
-        #     labels2 = kmeans2.labels_
-
-        #     clusteredImage1 = labels1.reshape(enhancedImage1.shape[0], enhancedImage1.shape[1])
-        #     clusteredImage2 = labels2.reshape(enhancedImage2.shape[0], enhancedImage2.shape[1])
-
-        #     cornerCluster1 = [clusteredImage1[0, 0], clusteredImage1[0, -1], clusteredImage1[-1, 0], clusteredImage1[-1, -1]]
-        #     cornerCluster2 = [clusteredImage2[0, 0], clusteredImage2[0, -1], clusteredImage2[-1, 0], clusteredImage2[-1, -1]]
-
-        #     nonPlayerCluster1 = max(set(cornerCluster1), key=cornerCluster1.count)
-        #     nonPlayerCluster2 = max(set(cornerCluster2), key=cornerCluster2.count)
-
-        #     playerCluster1 = 1 - nonPlayerCluster1
-        #     playerCluster2 = 1 - nonPlayerCluster2
-
-        #     kmeans1.cluster_centers_[playerCluster1]
-        #     kmeans2.cluster_centers_[playerCluster2]
-
-        #     rgbColour1 = kmeans1.cluster_centers_[playerCluster1]
-        #     rgbColour2 = kmeans2.cluster_centers_[playerCluster2]
-
-            
-        #     r1, g1, b1 = int(rgbColour1[0]), int(rgbColour1[1]), int(rgbColour1[2])
-        #     print(f"{r1}, {g1}, {b1}")
-        #     r2, g2, b2 = int(rgbColour2[0]), int(rgbColour2[1]), int(rgbColour2[2])
-        #     print(f"{r2}, {g2}, {b2}")
-        #     normalizedRgbColour1 = rgbColour1 / 255.0
-        #     normalizedRgbColour2 = rgbColour2 / 255.0
-
-        #    # Plot the images and color patches
-        #     plt.figure(figsize=(12, 8))
-            
-            # # Original Image 1
-            # plt.subplot(3, 3, 1)
-            # plt.imshow(enhancedImage1)
-            # plt.title('Player 1 - Original')
-            # plt.axis('off')
-            
-            # # Original Image 2
-            # plt.subplot(3, 3, 2)
-            # plt.imshow(enhancedImage2)
-            # plt.title('Player 2 - Original')
-            # plt.axis('off')
-
-        #     # Clustered Image 1
-        #     plt.subplot(3, 3, 4)
-        #     plt.imshow(clusteredImage1)
-        #     plt.title('Player 1 - Clustered')
-        #     plt.axis('off')
-
-        #     # Clustered Image 2
-        #     plt.subplot(3, 3, 5)
-        #     plt.imshow(clusteredImage2)
-        #     plt.title('Player 2 - Clustered')
-        #     plt.axis('off')
-
-        #     # RGB Color Patch for Player 1
-        #     plt.subplot(3, 3, 7)
-        #     plt.gca().add_patch(plt.Rectangle((0, 0), 1, 1, color=normalizedRgbColour1))
-        #     plt.title(f'Color 1 ({r1},{g1},{b1})')
-        #     plt.axis('off')
-
-        #     # RGB Color Patch for Player 2
-        #     plt.subplot(3, 3, 8)
-        #     plt.gca().add_patch(plt.Rectangle((0, 0), 1, 1, color=normalizedRgbColour2))
-        #     plt.title(f'Color 2 ({r2},{g2},{b2})')
-        #     plt.axis('off')
-
-            # Display the plot
-            # plt.tight_layout()
-            # plt.show()
-
-
-
-
-# def enhanceImageColours(image):
-#     hsvImage = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    
-#     # Increase the saturation and value components to enhance colors
-#     hsvImage[:, :, 1] = cv2.add(hsvImage[:, :, 1], 50)
-#     hsvImage[:, :, 2] = cv2.add(hsvImage[:, :, 2], 50)
-    
-#     enhancedImage = cv2.cvtColor(hsvImage, cv2.COLOR_HSV2RGB)
-#     return enhancedImage
-
-
-
-# def processPlayerImage(frame, bbox):
-#     croppedImage = cropImage(frame, bbox)
-#     # topHalfImage = croppedImage[0:int(croppedImage.shape[0]/2), :]
-#     # enhancedImage = enhanceImageColours(topHalfImage)
-#     return croppedImage
-
-# def getBoundingBox(box):
-#     return list(map(int, box.tolist()))
-    
-# def cropImage(frame, bbox):
-#     pilImage = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-#     croppedImage = pilImage.crop((bbox[0], bbox[1], bbox[2], bbox[3]))
-#     return np.array(croppedImage)
-
-# def croppedPlayers(results, frame):
-    
-#     for result in results:
-#         if len(result.boxes.xyxy) > 1:
-#             bbox1 = getBoundingBox(result.boxes.xyxy[0])
-#             bbox2 = getBoundingBox(result.boxes.xyxy[1])
-            
-#             enhancedImage1 = processPlayerImage(frame, bbox1)
-#             enhancedImage2 = processPlayerImage(frame, bbox2)
-            
-    

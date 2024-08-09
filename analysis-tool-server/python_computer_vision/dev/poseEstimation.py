@@ -158,7 +158,9 @@ def poseEstimation(videoPath):
 
     match_id = getMatchIDFromVideo(videoPath)
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    filesave = os.path.join(script_dir, '..', '..', 'poseOutputVideo', f'{match_id}.mp4')
+    output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
+    os.makedirs(output_dir, exist_ok=True)
+    filesave = os.path.join(output_dir, f'{match_id}.mp4')
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  
     out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
 
@@ -262,12 +264,14 @@ def getMatchIDFromVideo(video_path):
     match_id = os.path.splitext(baseName)[0]
     return match_id            
 
-def finalizeVideoProcessing(cap, frameData,videoPath):
+def finalizeVideoProcessing(cap, frameData, videoPath):
     cap.release()
     cv2.destroyAllWindows()
     match_id = getMatchIDFromVideo(videoPath)
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    filesave = os.path.join(script_dir, '..', '..', 'poseEstimationData', f'{match_id}.json')
+    output_dir = os.path.join(script_dir, '..', '..', 'poseEstimationData')
+    os.makedirs(output_dir, exist_ok=True)
+    filesave = os.path.join(output_dir, f'{match_id}.json')
     with open(filesave, 'w') as f:
         json.dump(frameData, f, indent=2)
 

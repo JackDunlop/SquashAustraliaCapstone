@@ -60,4 +60,6 @@ router.get('/:match_id', async (req, res) => {
         res.status(500).json({ message: 'Unexpected error', error: error.message });
     }
 });
+}
 module.exports = router;
+

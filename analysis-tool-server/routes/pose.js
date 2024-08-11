@@ -8,6 +8,7 @@ const videoFileFormats = ['mp4', 'mov', 'avi'];
 
 const findVideoFileMatchID = async (match_id) => {
     console.log(match_id)
+const findVideoFileMatchID = async (match_id) => {
     for (let videoFileFormat of videoFileFormats) {
 
         let _path = path.join(`${__dirname}../../videos/${match_id}.${videoFileFormat}`);

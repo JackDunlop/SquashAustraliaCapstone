@@ -66,10 +66,6 @@ class Arguments:
         self.uniqueIdentifier = uniqueIdentifier
         self.videoDataOutPutPath = videoDataOutPutPath
 
-    def print_arguments(self):
-        print(f"Video Path: {self.videoPath}")
-        print(f"Unique Identifier: {self.uniqueIdentifier}")
-
     def checkArgumentLength(argv):
         if len(argv) == 4:
             args = Arguments(argv[1], argv[2], argv[3])
@@ -145,54 +141,83 @@ def calculateAngle(p1, p2, p3):
     
     return angle_deg
 
-
-def poseEstimation(videoPath,outputDataFolderPath,match_id):
+def poseEstimation(videoPath):
     model_path = 'models/yolov8m-pose.pt'  
     model = YOLO(model_path) 
     confThresh = 0.80
-
+    modelClass = [0]
     cap = initialiseVideoCapture(videoPath)
+    
     if not cap:
         return
+
+    
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    match_id = getMatchIDFromVideo(videoPath)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
+    os.makedirs(output_dir, exist_ok=True)
+    filesave = os.path.join(output_dir, f'{match_id}.mp4')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  
+    out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
 
     frameData = []
     while True:
         ret, frame = cap.read()
         if not ret:
             break
+        
         frame_resized = cv2.resize(frame, (640, 640))
         frameTimestamp = getFrameTimestamp(cap)
-        detection = getDetection(model, frame_resized, confThresh)
-        if detection:
-            processDetection(detection, frameTimestamp, frameData,frame_resized)
+        detection = getDetection(model, frame, confThresh, modelClass)
         
-        #clear
-       # cv2.imshow('Frame', frame_resized)
+        if detection is None:
+            continue
+
+        processDetection(detection, frameTimestamp, frameData, frame)
+
+        
+        out.write(frame)
+        
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    finalizeVideoProcessing(cap, frameData,outputDataFolderPath,match_id)
+
+    finalizeVideoProcessing(cap, frameData, videoPath)
+    out.release()
+
+
 
 def initialiseVideoCapture(videoPath):
     cap = cv2.VideoCapture(videoPath)
     if not cap.isOpened():
-        print("Error: Could not open video.")
+        print(json.dumps("Error: Could not open video.", indent=2))
         return None
     return cap
 
 def getFrameTimestamp(cap):
-    frameTimestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000  # Convert milliseconds to seconds
+    frameTimestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000  
     return f"{frameTimestamp:.2f}s"
 
-def getDetection(model, frame, confThresh):
-    person = [0]
-    return model.track(frame, classes=person, conf=confThresh, show=False, verbose=False, persist=True, tracker="bytetrack.yaml")
+def getDetection(model, frame, confThresh, modelClass):
+
+    return model.track(frame,
+                        classes=modelClass,
+                          conf=confThresh,
+                            show=False,
+                            verbose=False, 
+                            persist=True, 
+                            tracker="bytetrack.yaml",
+                              save=False)
 
 def processDetection(detection, frameTimestamp, frameData, frame):
-    keypoints = detection[0].keypoints.xy
-    if not detection[0].boxes:
+   
+    if detection[0].boxes is None or detection[0].boxes.id is None:
         return
-
+    keypoints = detection[0].keypoints.xy
     track_ids = detection[0].boxes.id.cpu().numpy()  
     for track_id, kptArray in zip(track_ids, keypoints):
         keypointData = extractKeypointData(kptArray, frame, track_id)
@@ -214,9 +239,9 @@ def extractKeypointData(kptArray, frame, track_id):
         x, y = int(point[0]), int(point[1])
         keypointName = GetKeypoint(pointIndex).name
         keypointData[keypointName] = [x, y]
-        if keypointName == "LEFT_SHOULDER":
-
-            cv2.putText(frame, f"{track_id}", (x, y - 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        cv2.circle(frame, (x, y), 3, (0, 255, 0), -1)
+        # if keypointName == "LEFT_SHOULDER":
+        #     cv2.putText(frame, f"{track_id}", (x, y - 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
         
     return keypointData
 
@@ -226,24 +251,28 @@ def calculateAngleJoints(keypointData, p1String, p2String, p3string, specifcJoin
     p3 = keypointData[p3string]
     
     if any(np.array_equal(point, [0, 0]) for point in [p1, p2, p3]):
-        #print(p1,p2,p3)
         keypointData[specifcJoint] = "Can't Calculate Angle" 
     else:
         angle = calculateAngle(p1, p2, p3)
         keypointData[specifcJoint] = angle 
-        if specifcJoint == 'LEFT_ARM_ANGLE':
-            
-            cv2.putText(frame, f"{specifcJoint}: {angle:.2f}", (p2[0], p2[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (124,252,0), 2)
-            
+        # if specifcJoint == 'RIGHT_ARM_ANGLE':
+        #     cv2.putText(frame, f"{specifcJoint}: {angle:.2f}", (p2[0], p2[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (124,252,0), 2)
 
-def finalizeVideoProcessing(cap, frameData,outputDataFolderPath,match_id):
+
+def getMatchIDFromVideo(video_path):
+    baseName = os.path.basename(video_path)
+    match_id = os.path.splitext(baseName)[0]
+    return match_id            
+
+def finalizeVideoProcessing(cap, frameData, videoPath):
     cap.release()
     cv2.destroyAllWindows()
-    if not os.path.exists(outputDataFolderPath):
-        os.makedirs(outputDataFolderPath)
-    json_file_path = os.path.join(outputDataFolderPath, f'{match_id}.json')
-    print(json_file_path)
-    with open(json_file_path, 'w') as f:
+    match_id = getMatchIDFromVideo(videoPath)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, '..', '..', 'poseEstimationData')
+    os.makedirs(output_dir, exist_ok=True)
+    filesave = os.path.join(output_dir, f'{match_id}.json')
+    with open(filesave, 'w') as f:
         json.dump(frameData, f, indent=2)
 
 
@@ -273,6 +302,11 @@ def main():
    # elapsed_time = end_time - start_time
     #print(f"Time taken to read video: {elapsed_time:.2f} seconds")
     #print(f"{outputDataFolderPath}")
+
+def main():
+    videoPath = sys.argv[1]
+    poseEstimation(videoPath)
+   
    
 
 if __name__ == "__main__":

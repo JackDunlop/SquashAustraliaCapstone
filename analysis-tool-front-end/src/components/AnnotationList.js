@@ -415,7 +415,6 @@ export default function AnnotationList({
             </div>
         </div>
     );
-    console.log(match)
     return ( //This is the left hand side of the screen. The annotation log and resulting menus
         <>
             <div className="h-full flex flex-col">

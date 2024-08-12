@@ -415,7 +415,7 @@ export default function AnnotationList({
             </div>
         </div>
     );
-
+    console.log(match)
     return ( //This is the left hand side of the screen. The annotation log and resulting menus
         <>
             <div className="h-full flex flex-col">
@@ -424,8 +424,8 @@ export default function AnnotationList({
                     <table className="table-fixed w-full">
                         <thead>
                             <tr>
-                                <th className="w-6/8 border border-white bg-yellow-600 rounded">Player 1 </th>
-                                <th className="w-2/8 border border-white bg-green-600 rounded">Player 2</th>
+                                <th className="w-6/8 border border-white bg-yellow-600 rounded">{match.players ? match.players.player1 : "Player 1"} </th>
+                                <th className="w-2/8 border border-white bg-green-600 rounded">{match.players ? match.players.player2 : "Player 2"}</th>
                             </tr>
                         </thead>
                     </table>

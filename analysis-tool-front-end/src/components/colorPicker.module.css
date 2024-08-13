@@ -43,14 +43,13 @@ h5 {
 
 /* Defines the style of out next button, located in the process div. */
 .NextButtonColour {
-  width: 100%;
-  height: 100%;
   text-align: center;
   background:#006F3A;
   color: white;
   border: 3px solid #006F3A;
   border-radius: 10px;
-  font-size: 3rem;
+  padding: 12px;
+  font-size: 16px;
   font-weight: bold;
   cursor: pointer;
 }
@@ -115,9 +114,7 @@ h5 {
   position: absolute;
   top: 60%;
   left: 110%;
-  width: 30%;
-  height: 20%;
-  border: 3px solid #006F3A;    
+  margin-top: 12px;
   border-radius: 20px;
   text-align: center;
 }

@@ -17,6 +17,7 @@ export default function ViewVideo({ baseUrl }) {
   const [videoUrl, setVideoUrl] = useState('');
 
   useEffect(() => {
+    console.log(matchId)
     setVideoUrl(baseUrl + '/video/' + matchId + '/stream');
   }, [baseUrl, matchId]);
 

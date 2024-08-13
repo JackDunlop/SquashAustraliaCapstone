@@ -160,8 +160,8 @@ def poseEstimation(videoPath):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
     os.makedirs(output_dir, exist_ok=True)
-    filesave = os.path.join(output_dir, f'{match_id}.mp4')
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  
+    filesave = os.path.join(output_dir, f'{match_id}.avi')
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')  
     out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
 
     frameData = []
@@ -178,10 +178,8 @@ def poseEstimation(videoPath):
             continue
 
         processDetection(detection, frameTimestamp, frameData, frame)
-
         
-        out.write(frame)
-        
+        out.write(frame)        
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -275,39 +273,10 @@ def finalizeVideoProcessing(cap, frameData, videoPath):
     with open(filesave, 'w') as f:
         json.dump(frameData, f, indent=2)
 
-
-def call_human_pose(match_id):
-    thisdir = os.curdir()
-    video_dir = os.path.join(os.path.dirname(__file__), '..', 'videos')
-    poseEstimation(video_dir)
-
-
-
-def main():   
-
-    # Handling Arguments
-    args = Arguments.checkArgumentLength(sys.argv)
-    args.checkPathExists()
-    match_id = sys.argv[2]
-    outputDataFolderPath = sys.argv[3]
-    
-    
-    #start_time = time.time()
-    
-    poseEstimation(args.videoPath,outputDataFolderPath,match_id)
-    
-    # End timer
-    #end_time = time.time()
-    
-   # elapsed_time = end_time - start_time
-    #print(f"Time taken to read video: {elapsed_time:.2f} seconds")
-    #print(f"{outputDataFolderPath}")
-
 def main():
     videoPath = sys.argv[1]
     poseEstimation(videoPath)
-   
-   
+     
 
 if __name__ == "__main__":
     main()

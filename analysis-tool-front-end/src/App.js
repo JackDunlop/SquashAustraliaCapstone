@@ -42,15 +42,16 @@ function App() {
         <Route path="/view_video/:id">
           <ViewVideo baseUrl={baseUrl} />
         </Route>
+        <Route path="/analytics/:id">
+          <ViewAnalytics baseUrl={baseUrl} />
+        </Route> 
         <Route path="/stats/:id">
           <Statistics baseUrl={baseUrl} />
         </Route>
         <Route path="/all/stats">
             <AllStatistics baseUrl={baseUrl} />
         </Route>
-        <Route path="/analytics/:id">
-          <ViewAnalytics baseUrl={baseUrl} />
-        </Route>        
+               
       </Router>
     </div>
   );

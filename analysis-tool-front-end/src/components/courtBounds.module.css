@@ -25,14 +25,13 @@
 
 .submitBtn {
   width: 150px;
-  height: 50px;
+  height: 45px;
   background: #006f3a;
   border: 3px solid #006f3a;
   border-radius: 20px;
   color: white;
   font-size: 1rem;
   cursor: pointer;
-  margin-top: 10px;
 }
 
 .confirm {
@@ -75,6 +74,7 @@
   border-radius: 5px;
   cursor: pointer;
   text-align: center;
+  width: 140px;
 }
 
 .customFileLabel:hover {

@@ -11,7 +11,7 @@ export const ChooseImageButton = ({ onFileInput }) => {
         accept="image/*"
       />
       <label htmlFor="fileInput" class={styles.customFileLabel}>
-        Choose an image
+        Upload Thumbnail
       </label>
     </div>
   );

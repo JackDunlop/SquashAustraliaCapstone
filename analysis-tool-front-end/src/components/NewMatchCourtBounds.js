@@ -6,6 +6,86 @@ import { ChooseImageButton } from './ChooseImageButton';
 //import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 //import { faUpload } from '@fortawesome/free-solid-svg-icons';
 
+const positions = {
+  fL: {
+    description: 'Front Left',
+    id: 1,
+  },
+  fR: {
+    description: 'Front Right',
+    id: 2,
+  },
+  bL: {
+    description: 'Back Left',
+    id: 3,
+  },
+  bR: {
+    description: 'Back Right',
+    id: 4,
+  },
+  mL: {
+    description: 'Short Line Left',
+    id: 5,
+  },
+  mR: {
+    description: 'Short Line Right',
+    id: 6,
+  },
+};
+
+const PositionMarker = ({ label, positionId, onMarkPosition }) => {
+  const buttonStyles = {
+    width: '150px',
+    height: '45px',
+    background: '#006f3a',
+    border: '3px solid #006f3a',
+    borderRadius: '20px',
+    color: 'white',
+    fontSize: '1rem',
+    cursor: 'pointer',
+    marginRight: 12,
+  };
+
+  const canvasStyles = {
+    position: 'relative',
+    backgroundColor: 'red',
+  };
+
+  return (
+    <div
+      style={{
+        margin: '0 12px 40px 12px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <button
+        type="button"
+        style={buttonStyles}
+        onClick={() => onMarkPosition(positionId)}
+      >
+        {label}
+      </button>
+      <canvas
+        id={positionId}
+        width={25}
+        height={25}
+        style={canvasStyles}
+      ></canvas>
+    </div>
+  );
+};
+
+const NextButton = ({ onNextStep }) => {
+  return (
+    <form onSubmit={onNextStep}>
+      <button type="submit" class={styles.customFileLabel}>
+        Next
+      </button>
+    </form>
+  );
+};
 
 function Canvas(props) {
   const canvasRef = useRef(null);
@@ -19,47 +99,13 @@ function Canvas(props) {
       .drawImage(image, 0, 0, props.width, props.height);
   };
 
-  function frontLeftbtn() {
-    const confirm = document.getElementById('fL').getContext('2d');
+  const markPosition = (positionId) => {
+    const confirm = document.getElementById(positionId).getContext('2d');
     confirm.fillStyle = 'red';
     confirm.fillRect(0, 0, 25, 25);
-    coordRef.current = 1;
-  }
 
-  function frontRightbtn() {
-    const confirm = document.getElementById('fR').getContext('2d');
-    confirm.fillStyle = 'red';
-    confirm.fillRect(0, 0, 25, 25);
-    coordRef.current = 2;
-  }
-
-  function backLeftbtn() {
-    coordRef.current = 3;
-    const confirm = document.getElementById('bL').getContext('2d');
-    confirm.fillStyle = 'red';
-    confirm.fillRect(0, 0, 25, 25);
-  }
-
-  function backRightbtn() {
-    const confirm = document.getElementById('bR').getContext('2d');
-    confirm.fillStyle = 'red';
-    confirm.fillRect(0, 0, 25, 25);
-    coordRef.current = 4;
-  }
-
-  function midLeftbtn() {
-    const confirm = document.getElementById('mL').getContext('2d');
-    confirm.fillStyle = 'red';
-    confirm.fillRect(0, 0, 25, 25);
-    coordRef.current = 5;
-  }
-
-  function midRightbtn() {
-    const confirm = document.getElementById('mR').getContext('2d');
-    confirm.fillStyle = 'red';
-    confirm.fillRect(0, 0, 25, 25);
-    coordRef.current = 6;
-  }
+    coordRef.current = positions[positionId].id || 0;
+  };
 
   const handleFileInput = (event) => {
     image.src = URL.createObjectURL(event.target.files[0]);
@@ -144,79 +190,81 @@ function Canvas(props) {
     };
   }, []);
 
+  const chunkArray = (array, chunkSize) => {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+      chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+  };
+
+  const positionEntries = Object.entries(positions);
+  const positionChunks = chunkArray(positionEntries, 2);
+
   return (
-    <>
-      <div class={styles.content}>
+    <section
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+      }}
+    >
+      <section
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
         <canvas ref={canvasRef} width={props.width} height={props.height} />
-      </div>
-      <div class={styles.sidebar}>
-        <ChooseImageButton onFileInput={handleFileInput} />
-      </div>
+      </section>
 
-      <div class={styles.sidebar}>
-        <div class={styles.selectSection}>
-          <button type="button" class={styles.btn} onClick={frontLeftbtn}>
-            Front Left
-          </button>
-          <canvas
-            id="fL"
-            width={25}
-            height={25}
-            class={styles.confirm}
-          ></canvas>
-
-          <button type="button" class={styles.btn} onClick={frontRightbtn}>
-            Front Right
-          </button>
-          <canvas
-            id="fR"
-            width={25}
-            height={25}
-            class={styles.confirm}
-          ></canvas>
-
-          <button type="button" class={styles.btn} onClick={backLeftbtn}>
-            Back Left
-          </button>
-          <canvas
-            id="bL"
-            width={25}
-            height={25}
-            class={styles.confirm}
-          ></canvas>
-
-          <button type="button" class={styles.btn} onClick={backRightbtn}>
-            Back Right
-          </button>
-          <canvas
-            id="bR"
-            width={25}
-            height={25}
-            class={styles.confirm}
-          ></canvas>
-
-          <button type="button" class={styles.btn} onClick={midLeftbtn}>
-            Short Line Left
-          </button>
-          <canvas
-            id="mL"
-            width={25}
-            height={25}
-            class={styles.confirm}
-          ></canvas>
-
-          <button type="button" class={styles.btn} onClick={midRightbtn}>
-            Short Line Right
-          </button>
-          <canvas
-            id="mR"
-            width={25}
-            height={25}
-            class={styles.confirm}
-          ></canvas>
+      <section
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          width: '100%',
+          marginTop: 24,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ marginBottom: 36 }}>
+          <ChooseImageButton onFileInput={handleFileInput} />
         </div>
-      </div>
-    </>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            margin: '0 24px',
+            padding: '0 160px',
+          }}
+        >
+          {positionChunks.map((chunk, index) => (
+            <div
+              key={index}
+              className="position-group"
+              style={{ display: 'flex', flexDirection: 'column' }}
+            >
+              {chunk.map(([key, value]) => (
+                <PositionMarker
+                  key={value.id}
+                  label={value.description}
+                  positionId={key}
+                  onMarkPosition={markPosition}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <NextButton onNextStep={props.onNextStep} />
+        </div>
+      </section>
+    </section>
   );
 }
 
@@ -274,26 +322,16 @@ class CourtBounds extends React.Component {
 
   render() {
     return (
-      <>
-        <body class={styles.body}>
-          <div class={styles.wrapper}>
-            <Canvas
-              width={1280}
-              height={720}
-              court_bounds={this.state.courtBounds}
-            ></Canvas>
-            <form onSubmit={this.handleSubmit} class={styles.sidebar}>
-              <div class={styles.sidebar}>
-                <div class={styles.submit}>
-                  <button type="submit" class={styles.submitBtn}>
-                    Next
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </body>
-      </>
+      <section style={{ display: 'flex', flexDirection: 'column' }}>
+        <section style={{ marginBottom: 24, display: 'flex' }}>
+          <Canvas
+            width={1280}
+            height={720}
+            court_bounds={this.state.courtBounds}
+            onNextStep={this.handleSubmit}
+          ></Canvas>
+        </section>
+      </section>
     );
   }
 }

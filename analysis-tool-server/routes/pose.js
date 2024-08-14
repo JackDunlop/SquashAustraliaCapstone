@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 const router = express.Router();
 const { spawn } = require('child_process');
@@ -137,6 +135,13 @@ router.get('/angles/:match_id', async (req, res) => {
         console.error(`Unexpected error: ${error}`);
         res.status(500).json({ message: 'Unexpected error', error: error.message });
     }
+});
+router.get('/:match_id/stream', async (req, res) => {
+    handle(
+        validate.params(matchIdSchema)
+      ),
+    await poseController.stream(req,res)
+       
 });
 
 module.exports = router;

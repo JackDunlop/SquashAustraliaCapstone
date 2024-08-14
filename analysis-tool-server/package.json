@@ -41,7 +41,8 @@
   },
   "nodemonConfig": {
     "ignore": [
-      "/analysis-tool-server/poseEstimationData/*"
+      "/analysis-tool-server/poseEstimationData/*",
+      "/analysis-tool-server/jointAngleCalculation/*"
     ]
   }
 }

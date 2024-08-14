@@ -13,7 +13,8 @@ from enum import Enum
 import time
 import numpy as np
 import json
-
+import tensorflow as tf
+from tensorflow.keras.models import load_model
 ''' 
     **********************************************************************************************************************************************************************************
     *************************************************************************** CUSTOM ERRORS ***************************************************************************************
@@ -156,12 +157,15 @@ def poseEstimation(videoPath):
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
 
+    # Prepare output file path
     match_id = getMatchIDFromVideo(videoPath)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
     os.makedirs(output_dir, exist_ok=True)
-    filesave = os.path.join(output_dir, f'{match_id}.avi')
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')  
+    filesave = os.path.join(output_dir, f'{match_id}.mp4') # change depending on codec
+
+    # Use codec for required output
+    fourcc = cv2.VideoWriter_fourcc(*'H264')  
     out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
 
     frameData = []
@@ -170,19 +174,21 @@ def poseEstimation(videoPath):
         if not ret:
             break
         
+        # Resize frame for model input
         frame_resized = cv2.resize(frame, (640, 640))
         frameTimestamp = getFrameTimestamp(cap)
+
         detection = getDetection(model, frame, confThresh, modelClass)
         
         if detection is None:
             continue
+        
 
         processDetection(detection, frameTimestamp, frameData, frame)
         
         out.write(frame)        
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
 
     finalizeVideoProcessing(cap, frameData, videoPath)
     out.release()

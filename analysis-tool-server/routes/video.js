@@ -1,4 +1,5 @@
 const router = require('express').Router();
+
 const handle = require('../validators/handle');
 const validate = require('../validators/validate');
 const { matchIdSchema } = require('../validators/match.schemas');

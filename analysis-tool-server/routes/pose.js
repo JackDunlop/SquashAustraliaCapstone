@@ -3,7 +3,11 @@ const router = express.Router();
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const poseController = require('../controllers/pose.controller');
 
+const handle = require('../validators/handle');
+const validate = require('../validators/validate');
+const { matchIdSchema } = require('../validators/match.schemas');
 const videoFileFormats = ['mp4', 'mov', 'avi'];
 
 const findVideoFileMatchID = async (match_id) => {
@@ -15,7 +19,6 @@ const findVideoFileMatchID = async (match_id) => {
     }
     return '';
 }
-
 router.get('/:match_id', async (req, res) => {
     try {
         const match_id = req.params.match_id;
@@ -30,7 +33,6 @@ router.get('/:match_id', async (req, res) => {
         // }
 
         const pythonProcess = spawn('python', ['./python_computer_vision/dev/poseEstimation.py', videoFilePath]);
-
         let stderrData = '';
 
         pythonProcess.stdout.on('data', (data) => {
@@ -59,6 +61,13 @@ router.get('/:match_id', async (req, res) => {
         console.error(`Unexpected error: ${error}`);
         res.status(500).json({ message: 'Unexpected error', error: error.message });
     }
+});
+router.get('/:match_id/stream', async (req, res) => {
+    handle(
+        validate.params(matchIdSchema)
+      ),
+    await poseController.stream(req,res)
+       
 });
 
 module.exports = router;

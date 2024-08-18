@@ -90,10 +90,32 @@ const remove = async (req, res, next) => {
   return res.status(200).json('Successfully removed annotation.');
 };
 
+// clear all annotations
+const clearAll = async (req, res, next) => {
+  try {
+    const { match_id } = req.params;
+
+    const result = await Match.updateOne(
+      { _id: match_id },
+      { $set: { annotations: [] } }
+    );
+
+    if (result.nModified === 0) {
+      return res.status(404).json({ message: 'No match found or annotations already cleared.' });
+    }
+
+    return res.status(200).json({ message: 'Successfully cleared all annotations.' });
+  } catch (error) {
+    console.error('Error clearing annotations:', error);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
 module.exports = {
   create,
   get,
   getAll,
   edit,
-  remove
+  remove,
+  clearAll
 };

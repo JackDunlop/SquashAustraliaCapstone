@@ -54,4 +54,12 @@ router.post('/:match_id/:annotation_id/remove',
   annotationController.remove
 );
 
+// route for clearing all annotations of a match
+router.delete('/:match_id/annotations/clear',
+  handle(
+    validate.params(matchIdSchema)
+  ),
+  annotationController.clearAll
+);
+
 module.exports = router;

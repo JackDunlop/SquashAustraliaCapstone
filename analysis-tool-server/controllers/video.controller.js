@@ -3,19 +3,6 @@ const fs = require("fs");
 const util = require('../lib/util');
 const videoFileFormats = ['mp4', 'mov', 'avi'];
 const { spawn } = require('child_process');
-const findVideoFile = async (req) => {
-  for (let videoFileFormat of videoFileFormats) {
-    let _path =
-      path.join(
-        `${__dirname}../../videos/${req.params.match_id}.${videoFileFormat}`
-      );
-
-
-    if (fs.existsSync(_path)) return _path;
-  }
-
-  return '';
-}
 
 
 
@@ -46,8 +33,22 @@ const stream = async (req, res, next) => {
   if (!range) {
     res.status(400).send('Requires Range header');
   }
+  const findVideoFile = async () => {
+    for (let videoFileFormat of videoFileFormats) {
+      let _path =
+        path.join(
+          `${__dirname}../../videos/${req.params.match_id}.${videoFileFormat}`
+        );
 
-  const videoFilePath = await findVideoFile(req);
+
+      if (fs.existsSync(_path)) return _path;
+    }
+
+    return '';
+  }
+
+
+  const videoFilePath = await findVideoFile();
 
   if (videoFilePath !== '') {
     const videoSize = fs.statSync(videoFilePath).size;
@@ -79,6 +80,19 @@ const stream = async (req, res, next) => {
 const extractFirstFrame = async (req, res, next) => {
   if (req.params.match_id) {
     console.log(req.params.match_id);
+    const findVideoFile = async (req) => {
+      for (let videoFileFormat of videoFileFormats) {
+        let _path =
+          path.join(
+            `${__dirname}../../videos/${req.params.match_id}.${videoFileFormat}`
+          );
+
+
+        if (fs.existsSync(_path)) return _path;
+      }
+
+      return '';
+    }
 
     const videoFilePath = await findVideoFile(req);
     console.log(videoFilePath);

@@ -2,7 +2,6 @@ import sys
 import os
 import cv2
 from ultralytics import YOLO
-import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
 from PIL import Image
@@ -85,6 +84,10 @@ def readFrameWithTwoBBoxes(videoPath, model, classes, confThresh):
 
 class Clustering:
     def __init__(self, modelPath):
+        if not os.path.exists(modelPath):
+            # Download the model quietly
+            import subprocess
+            subprocess.run(['python', '-m', 'ultralytics', 'download', '--model', 'yolov8n.pt'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.model = YOLO(modelPath)
   
 
@@ -166,8 +169,12 @@ def main():
     #start_time = time.time()
     args = Arguments.checkArgumentLength(sys.argv)
     args.checkPathExists()
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    models_dir = os.path.join(script_dir, 'models')
+    if not os.path.exists(models_dir):
+        os.makedirs(models_dir)
 
-    modelPath = 'models/yolov8n.pt'
+    modelPath = os.path.join(models_dir, 'yolov8n.pt')
     classes = [0]  
     confThresh = 0.6 
     getPlayers = Clustering(modelPath)
@@ -186,7 +193,7 @@ def main():
         "PlayerOne": playerOneRGB,
         "PlayerTwo": playerTwoRGB
     }
-    print(json.dumps(players, indent=2))
+    print(json.dumps(players, indent=2)) 
 
    
 

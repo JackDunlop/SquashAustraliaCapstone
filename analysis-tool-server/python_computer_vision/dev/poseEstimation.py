@@ -28,7 +28,11 @@ class GetKeypoint(Enum):
     RIGHT_ANKLE:    int = 16
 
 def poseEstimation(videoPath):
-    model_path = 'models/yolov8m-pose.pt'  
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    models_dir = os.path.join(script_dir, 'models')
+    if not os.path.exists(models_dir):
+        os.makedirs(models_dir)
+    model_path = os.path.join(models_dir, 'yolov8m-pose.pt') 
     model = YOLO(model_path) 
     confThresh = 0.80
     modelClass = [0]

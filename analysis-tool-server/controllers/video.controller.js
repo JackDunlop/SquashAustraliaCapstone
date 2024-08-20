@@ -23,8 +23,6 @@ const upload = async (req, res, next) => {
 };
 
 
-
-
 // stream video
 const stream = async (req, res, next) => {
   // ensure there is a range given for the video
@@ -33,6 +31,9 @@ const stream = async (req, res, next) => {
   if (!range) {
     res.status(400).send('Requires Range header');
   }
+
+  const videoFileFormats = ['mp4', 'mov', 'avi'];
+
   const findVideoFile = async () => {
     for (let videoFileFormat of videoFileFormats) {
       let _path =
@@ -40,13 +41,12 @@ const stream = async (req, res, next) => {
           `${__dirname}../../videos/${req.params.match_id}.${videoFileFormat}`
         );
 
-
+      // ensure that the video file exists
       if (fs.existsSync(_path)) return _path;
     }
 
     return '';
   }
-
 
   const videoFilePath = await findVideoFile();
 
@@ -75,6 +75,7 @@ const stream = async (req, res, next) => {
     res.status(404).json('');
   }
 };
+
 
 
 const extractFirstFrame = async (req, res, next) => {

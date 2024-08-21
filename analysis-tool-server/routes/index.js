@@ -8,7 +8,6 @@ const poseRouter = require('./pose')
 
 // index route
 router.get('/', (req, res) => {
-  console.log('work')
   res.status(200).json('OK');
 });
 

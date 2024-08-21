@@ -8,6 +8,7 @@ from enum import Enum
 import time
 import numpy as np
 import json
+
 class GetKeypoint(Enum):
     NOSE:           int = 0
     LEFT_EYE:       int = 1
@@ -42,19 +43,27 @@ def poseEstimation(videoPath):
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
+
+    # Prepare output file path
     match_id = getMatchIDFromVideo(videoPath)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
     os.makedirs(output_dir, exist_ok=True)
-    filesave = os.path.join(output_dir, f'{match_id}.mp4')
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  
+    filesave = os.path.join(output_dir, f'{match_id}.mp4') # change depending on codec
+
+    # Use codec for required output
+    fourcc = cv2.VideoWriter_fourcc(*'H264')  
     out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
     frameData = []
     while True:
         ret, frame = cap.read()
         if not ret:
             break
+        
+        # Resize frame for model input
+        frame_resized = cv2.resize(frame, (640, 640))
         frameTimestamp = getFrameTimestamp(cap)
+
         detection = getDetection(model, frame, confThresh, modelClass)
         if detection is None:
             continue
@@ -131,6 +140,7 @@ def finaliseVideoProcessing(cap, frameData, videoPath):
 def main():
     videoPath = sys.argv[1]
     poseEstimation(videoPath)
-    
+     
+
 if __name__ == "__main__":
     main()

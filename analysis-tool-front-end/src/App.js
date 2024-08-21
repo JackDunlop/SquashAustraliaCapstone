@@ -8,6 +8,7 @@ import ViewVideo from './components/ViewVideo';
 import CourtBounds from './components/NewMatchCourtBounds';
 import ColourPicker from './components/ColourPicker';
 import AllStatistics from './components/AllStatistics';
+import ViewAnalytics from './components/ViewAnalytics';
 
 
 //<Route path="/new/canvas">
@@ -41,12 +42,16 @@ function App() {
         <Route path="/view_video/:id">
           <ViewVideo baseUrl={baseUrl} />
         </Route>
+        <Route path="/analytics/:id">
+          <ViewAnalytics baseUrl={baseUrl} />
+        </Route> 
         <Route path="/stats/:id">
           <Statistics baseUrl={baseUrl} />
         </Route>
         <Route path="/all/stats">
             <AllStatistics baseUrl={baseUrl} />
         </Route>
+               
       </Router>
     </div>
   );

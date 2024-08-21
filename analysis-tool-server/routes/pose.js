@@ -1,11 +1,13 @@
-
-
 const express = require('express');
 const router = express.Router();
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const poseController = require('../controllers/pose.controller');
 
+const handle = require('../validators/handle');
+const validate = require('../validators/validate');
+const { matchIdSchema } = require('../validators/match.schemas');
 const videoFileFormats = ['mp4', 'mov', 'avi'];
 
 const findVideoFileMatchID = async (match_id) => {
@@ -17,6 +19,11 @@ const findVideoFileMatchID = async (match_id) => {
     }
     return '';
 }
+
+// const findPathOutputData = async () => {
+//     let _path = path.join(__dirname, `../poseEstimationData`);
+//     if (fs.existsSync(_path)) return _path;
+// }
 
 router.get('/:match_id', async (req, res) => {
     try {
@@ -130,7 +137,12 @@ router.get('/angles/:match_id', async (req, res) => {
         res.status(500).json({ message: 'Unexpected error', error: error.message });
     }
 });
-
-
+router.get('/:match_id/stream', async (req, res) => {
+    handle(
+        validate.params(matchIdSchema)
+      ),
+    await poseController.stream(req,res)
+       
+});
 
 module.exports = router;

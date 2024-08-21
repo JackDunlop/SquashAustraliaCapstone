@@ -93,3 +93,15 @@
 ::-webkit-file-upload-button {
   display: none;
 }
+.progress-container {
+  width: 100%;
+  height: 4px;
+  background-color: #f3f3f3;
+  margin-top: 10px;
+}
+.progress-bar {
+  height: 100%;
+  background-color: #5d0f7b;
+  width: 0%;
+}
+

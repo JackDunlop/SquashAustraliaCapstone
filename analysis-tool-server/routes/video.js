@@ -21,4 +21,13 @@ router.get('/:match_id/stream',
   videoController.stream
 );
 
+// route for extracting first frame
+router.get('/:match_id/firstframe',
+  handle(
+    validate.params(matchIdSchema)
+  ),
+  videoController.extractFirstFrame
+);
+
+
 module.exports = router;

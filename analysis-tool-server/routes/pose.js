@@ -32,7 +32,8 @@ router.get('/:match_id', async (req, res) => {
         if (!videoFilePath) {
             return res.status(400).json({ message: 'Video file not found' });
         }
-        const pythonProcess = spawn('python', ['./python_computer_vision/dev/poseEstimation.py', videoFilePath]);
+        const pythonScriptPath = path.join(__dirname, '../../analysis-tool-server/python_computer_vision/dev/poseEstimation.py');
+        const pythonProcess = spawn('python', [pythonScriptPath, videoFilePath]);
         let stderrData = '';
         pythonProcess.stdout.on('data', (data) => {
             console.log(`stdout: ${data}`);

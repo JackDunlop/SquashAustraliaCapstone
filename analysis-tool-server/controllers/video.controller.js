@@ -1,6 +1,10 @@
 const path = require('path');
 const fs = require("fs");
 const util = require('../lib/util');
+const videoFileFormats = ['mp4', 'mov', 'avi'];
+const { spawn } = require('child_process');
+
+
 
 // upload video
 const upload = async (req, res, next) => {
@@ -17,6 +21,7 @@ const upload = async (req, res, next) => {
     res.status(400).json('No video file provided.');
   }
 };
+
 
 // stream video
 const stream = async (req, res, next) => {
@@ -71,7 +76,64 @@ const stream = async (req, res, next) => {
   }
 };
 
+
+
+const extractFirstFrame = async (req, res, next) => {
+  if (req.params.match_id) {
+    console.log(req.params.match_id);
+    const findVideoFile = async (req) => {
+      for (let videoFileFormat of videoFileFormats) {
+        let _path =
+          path.join(
+            `${__dirname}../../videos/${req.params.match_id}.${videoFileFormat}`
+          );
+
+
+        if (fs.existsSync(_path)) return _path;
+      }
+
+      return '';
+    }
+
+    const videoFilePath = await findVideoFile(req);
+    console.log(videoFilePath);
+    //const outputFolder = path.join(__dirname, '../../firstFrameExtracts');
+    // const outputPath = path.join(outputFolder, `${req.params.match_id}-first-frame.jpg`);
+
+
+
+    // if (!fs.existsSync(outputFolder)) {
+    //   fs.mkdirSync(outputFolder, { recursive: true });
+    // }
+    const scriptPath = path.join(__dirname, '../controllers/firstFrame.py');
+    const pythonProcess = spawn('python', [scriptPath, videoFilePath]);
+    let stderrData = '';
+    pythonProcess.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`);
+    });
+    pythonProcess.stderr.on('data', (data) => {
+      stderrData += data.toString();
+    });
+    pythonProcess.on('close', (code) => {
+      console.log(`child process exited with code ${code}`);
+      if (code === 0) {
+        res.status(200).json({ message: 'Finished' });
+      } else {
+        res.status(500).json({ message: 'Process failed', code: code, error: stderrData });
+      }
+    });
+    pythonProcess.on('error', (err) => {
+      console.error(`Failed to start process: ${err}`);
+      res.status(500).json({ message: 'Failed to start process', error: err.message });
+    });
+
+  } else {
+    res.status(400).json('No Video Uploadied Matching That Match ID');
+  }
+};
+
 module.exports = {
   upload,
-  stream
+  stream,
+  extractFirstFrame
 };

@@ -21,7 +21,9 @@ router.get('/players/:match_id', async (req, res) => {
   const match_id = req.params.match_id;
   const videoFilePath = await findVideoFileMatchID(match_id);
 
-  const pythonProcess = spawn('python', ['./python_computer_vision/kmeans/kmeansplayerselection.py', videoFilePath]); // kmeans python script will take args video path
+  const pythonScriptPath = path.join(__dirname, '../../analysis-tool-server/python_computer_vision/kmeans/kmeansplayerselection.py');
+
+  const pythonProcess = spawn('python', [pythonScriptPath, videoFilePath]);
   let scriptOutput = '';
 
 

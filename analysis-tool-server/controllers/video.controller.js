@@ -3,7 +3,7 @@ const fs = require("fs");
 const util = require('../lib/util');
 const videoFileFormats = ['mp4', 'mov', 'avi'];
 const { spawn } = require('child_process');
-
+const fsExtra = require('fs-extra');
 
 
 // upload video
@@ -23,8 +23,6 @@ const upload = async (req, res, next) => {
 };
 
 
-
-
 // stream video
 const stream = async (req, res, next) => {
   // ensure there is a range given for the video
@@ -33,6 +31,9 @@ const stream = async (req, res, next) => {
   if (!range) {
     res.status(400).send('Requires Range header');
   }
+
+  const videoFileFormats = ['mp4', 'mov', 'avi'];
+
   const findVideoFile = async () => {
     for (let videoFileFormat of videoFileFormats) {
       let _path =
@@ -40,13 +41,12 @@ const stream = async (req, res, next) => {
           `${__dirname}../../videos/${req.params.match_id}.${videoFileFormat}`
         );
 
-
+      // ensure that the video file exists
       if (fs.existsSync(_path)) return _path;
     }
 
     return '';
   }
-
 
   const videoFilePath = await findVideoFile();
 
@@ -77,33 +77,23 @@ const stream = async (req, res, next) => {
 };
 
 
+
 const extractFirstFrame = async (req, res, next) => {
-  if (req.params.match_id) {
-    console.log(req.params.match_id);
+  if (req.params.filename) {
     const findVideoFile = async (req) => {
       for (let videoFileFormat of videoFileFormats) {
         let _path =
           path.join(
-            `${__dirname}../../videos/${req.params.match_id}.${videoFileFormat}`
+            `${__dirname}../../tempstorage/${req.params.filename}`
           );
-
+        console.log(_path);
 
         if (fs.existsSync(_path)) return _path;
       }
 
       return '';
     }
-
     const videoFilePath = await findVideoFile(req);
-    console.log(videoFilePath);
-    //const outputFolder = path.join(__dirname, '../../firstFrameExtracts');
-    // const outputPath = path.join(outputFolder, `${req.params.match_id}-first-frame.jpg`);
-
-
-
-    // if (!fs.existsSync(outputFolder)) {
-    //   fs.mkdirSync(outputFolder, { recursive: true });
-    // }
     const scriptPath = path.join(__dirname, '../controllers/firstFrame.py');
     const pythonProcess = spawn('python', [scriptPath, videoFilePath]);
     let stderrData = '';
@@ -113,8 +103,17 @@ const extractFirstFrame = async (req, res, next) => {
     pythonProcess.stderr.on('data', (data) => {
       stderrData += data.toString();
     });
-    pythonProcess.on('close', (code) => {
+    pythonProcess.on('close', async (code) => {
       console.log(`child process exited with code ${code}`);
+      try {
+        await fsExtra.emptyDir(path.join(
+          `${__dirname}../../tempstorage`
+        ));
+
+      } catch (err) {
+        res.status(500).json({ message: 'Error', code: code, error: err });
+      }
+
       if (code === 0) {
         res.status(200).json({ message: 'Finished' });
       } else {
@@ -122,17 +121,40 @@ const extractFirstFrame = async (req, res, next) => {
       }
     });
     pythonProcess.on('error', (err) => {
-      console.error(`Failed to start process: ${err}`);
       res.status(500).json({ message: 'Failed to start process', error: err.message });
     });
 
   } else {
-    res.status(400).json('No Video Uploadied Matching That Match ID');
+    res.status(400).json('No Video Uploaded Matching That Match ID');
   }
 };
+
+
+const uploadTemp = async (req, res, next) => {
+  if (req.files && req.files.video) {
+    const originalFileName = req.files.video.name;
+    const videoExtension = util.getVideoFileFormat(req.files.video.mimetype);
+    const tempVideoPath = path.join(
+      `${__dirname}../../tempstorage/${path.basename(originalFileName, path.extname(originalFileName))}.${videoExtension}`
+    );
+    if (!fs.existsSync(path.join(`${__dirname}../../tempstorage`))) {
+      fs.mkdirSync(path.join(`${__dirname}../../tempstorage`), { recursive: true });
+    }
+    const [result, err] = await util.handleFileUpload(req.files.video, tempVideoPath);
+    if (err) return res.status(400).json(err.message);
+    res.status(200).json({
+      message: 'Video uploaded successfully',
+      videoName: path.basename(tempVideoPath),
+    });
+  } else {
+    res.status(400).json('No video file provided.');
+  }
+};
+
 
 module.exports = {
   upload,
   stream,
-  extractFirstFrame
+  extractFirstFrame,
+  uploadTemp
 };

@@ -21,11 +21,12 @@ router.get('/:match_id/stream',
 );
 
 // route for extracting first frame
-router.get('/:match_id/firstframe',
-  handle(
-    validate.params(matchIdSchema)
-  ),
+router.get('/:filename/firstframe',
   videoController.extractFirstFrame
+);
+
+router.post('/uploadTemp',
+  videoController.uploadTemp
 );
 
 

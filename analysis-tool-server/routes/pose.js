@@ -144,5 +144,22 @@ router.get('/:match_id/stream', async (req, res) => {
     await poseController.stream(req,res)
        
 });
+router.get('/:match_id/stream', async (req, res) => {
+    handle(
+        validate.params(matchIdSchema)
+      ),
+    await poseController.stream(req,res)
+       
+});
+router.post('/newmatch/positions', async (req, res) => {
+    try {
+      const positions = req.body; 
+      res.status(200).json({message: 'Positions saved successfully'});
+      // save to mongo...
+    } catch (error) {
+      console.error('Error processing positions:', error);
+      res.status(500).json({ message: 'Error processing positions', error });
+    }
+  });
 
 module.exports = router;

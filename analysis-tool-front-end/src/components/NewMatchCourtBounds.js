@@ -1,11 +1,12 @@
 import React from 'react';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect} from 'react';
 import { withRouter } from 'react-router-dom';
 import styles from './courtBounds.module.css';
 import { ChooseImageButton } from './ChooseImageButton';
+
 //import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 //import { faUpload } from '@fortawesome/free-solid-svg-icons';
-
+const baseURL = "http://localhost:3001/"
 const positions = {
   fL: {
     description: 'Front Left',
@@ -76,16 +77,16 @@ const PositionMarker = ({ label, positionId, onMarkPosition }) => {
     </div>
   );
 };
-
-const NextButton = ({ onNextStep }) => {
-  return (
-    <form onSubmit={onNextStep}>
-      <button type="submit" class={styles.customFileLabel}>
-        Next
-      </button>
-    </form>
-  );
-};
+  
+  const NextButton = ({onNextStep })  => { 
+    return (
+      <form onSubmit={onNextStep}>
+        <button type="submit" class={styles.customFileLabel}>
+          Next
+        </button>
+      </form>
+    );
+  }; 
 
 function Canvas(props) {
   const canvasRef = useRef(null);
@@ -276,6 +277,7 @@ class CourtBounds extends React.Component {
       courtBounds: [[], [], [], [], [], []],
     };
   }
+  
 
   formValidation = () => {
     let error = false;
@@ -301,22 +303,44 @@ class CourtBounds extends React.Component {
     return error;
   };
 
-  handleSubmit = (event) => {
-    let form_error = this.formValidation();
+  handleSubmit = async (event) => {
     event.preventDefault();
+    let form_error = this.formValidation();
+  
     if (!form_error) {
-      this.props.history.push({
-        pathname: '/new/colourPick',
-        state: {
-          from: this.props.location.pathname,
-          player: this.state.value.player,
-          title: this.state.value.title,
-          duration: this.state.value.duration,
-          description: this.state.value.description,
-          video: this.state.value.video,
-          court_Bounds: this.state.courtBounds,
-        },
-      });
+      try {
+        const courtUrl = `${baseURL}pose/newmatch/positions`;
+  
+        const response = await fetch(courtUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.state.courtBounds), // Send the court bounds data to the backend
+        });
+  
+        if (!response.ok) {
+          throw new Error(`Status: ${response.status}`);
+        }
+  
+        const data = await response.json();
+        console.log('Positions sent successfully:', data);
+  
+        this.props.history.push({
+          pathname: '/new/colourPick',
+          state: {
+            from: this.props.location.pathname,
+            player: this.state.value.player,
+            title: this.state.value.title,
+            duration: this.state.value.duration,
+            description: this.state.value.description,
+            video: this.state.value.video,
+            court_Bounds: this.state.courtBounds,
+          },
+        });
+      } catch (error) {
+        console.error('Error sending positions:', error);
+      }
     }
   };
 
@@ -335,5 +359,4 @@ class CourtBounds extends React.Component {
     );
   }
 }
-
 export default withRouter(CourtBounds);

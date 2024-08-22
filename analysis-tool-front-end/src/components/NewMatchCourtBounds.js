@@ -323,9 +323,7 @@ class CourtBounds extends React.Component {
           throw new Error(`Status: ${response.status}`);
         }
   
-        const data = await response.json();
-        console.log('Positions sent successfully:', data);
-  
+        const data = await response.json();  
         this.props.history.push({
           pathname: '/new/colourPick',
           state: {

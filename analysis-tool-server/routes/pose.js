@@ -156,8 +156,7 @@ router.post('/newmatch/positions', async (req, res) => {
       const positions = req.body; 
       res.status(200).json({message: 'Positions saved successfully'});
       // save to mongo...
-    } catch (error) {
-      console.error('Error processing positions:', error);
+    } catch (error) {      
       res.status(500).json({ message: 'Error processing positions', error });
     }
   });

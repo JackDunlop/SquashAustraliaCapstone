@@ -2,33 +2,17 @@ const express = require('express');
 const router = express.Router();
 const { spawn } = require('child_process');
 const path = require('path');
-const fs = require('fs');
-const poseController = require('../controllers/pose.controller');
 
+const poseController = require('../controllers/pose.controller');
 const handle = require('../validators/handle');
 const validate = require('../validators/validate');
 const { matchIdSchema } = require('../validators/match.schemas');
-const videoFileFormats = ['mp4', 'mov', 'avi'];
 
-const findVideoFileMatchID = async (match_id) => {
-    for (let videoFileFormat of videoFileFormats) {
-        let _path = path.join(`${__dirname}../../videos/${match_id}.${videoFileFormat}`);
-
-        if (fs.existsSync(_path)) return _path;
-
-    }
-    return '';
-}
-
-// const findPathOutputData = async () => {
-//     let _path = path.join(__dirname, `../poseEstimationData`);
-//     if (fs.existsSync(_path)) return _path;
-// }
 
 router.get('/:match_id', async (req, res) => {
     try {
         const match_id = req.params.match_id;
-        const videoFilePath = await findVideoFileMatchID(match_id);
+        const videoFilePath = await poseController.findVideoFileMatchID(match_id);
         if (!videoFilePath) {
             return res.status(400).json({ message: 'Video file not found' });
         }
@@ -59,22 +43,12 @@ router.get('/:match_id', async (req, res) => {
     }
 });
 
-const jsonFileFormats = ['json'];
-const findDataFileMatchID = async (match_id) => {
-    for (let jsonFileFormat of jsonFileFormats) {
-        let _path = path.join(`${__dirname}../../poseEstimationData/${match_id}.${jsonFileFormats}`);
-
-        if (fs.existsSync(_path)) return _path;
-
-    }
-    return '';
-}
 
 router.get('/velocity/:match_id/:hand', async (req, res) => {
     try {
         const match_id = req.params.match_id;
         const handType = req.params.hand;
-        const jsonPath = await findDataFileMatchID(match_id);
+        const jsonPath = await poseController.findDataFileMatchID(match_id);
         if (!jsonPath) {
             return res.status(400).json({ message: 'Data file not found' });
         }
@@ -108,11 +82,12 @@ router.get('/velocity/:match_id/:hand', async (req, res) => {
 router.get('/angles/:match_id', async (req, res) => {
     try {
         const match_id = req.params.match_id;
-        const jsonPath = await findDataFileMatchID(match_id);
+        const jsonPath = await poseController.findDataFileMatchID(match_id);
         if (!jsonPath) {
             return res.status(400).json({ message: 'Data file not found' });
-        }
-        const pythonProcess = spawn('python', ['./python_computer_vision/dev/jointangles.py', jsonPath]);
+        }        
+        const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/jointangles.py');        
+        const pythonProcess = spawn('python', [pythonScriptPath, jsonPath]);
         let stderrData = '';
         pythonProcess.stdout.on('data', (data) => {
             console.log(`stdout: ${data}`);
@@ -137,6 +112,7 @@ router.get('/angles/:match_id', async (req, res) => {
         res.status(500).json({ message: 'Unexpected error', error: error.message });
     }
 });
+
 router.get('/:match_id/stream', async (req, res) => {
     handle(
         validate.params(matchIdSchema)
@@ -144,21 +120,14 @@ router.get('/:match_id/stream', async (req, res) => {
     await poseController.stream(req,res)
        
 });
-router.get('/:match_id/stream', async (req, res) => {
+
+// 6 points of court WIP
+router.get('/createLayout/:match_id',
     handle(
-        validate.params(matchIdSchema)
-      ),
-    await poseController.stream(req,res)
-       
-});
-router.post('/newmatch/positions', async (req, res) => {
-    try {
-      const positions = req.body; 
-      res.status(200).json({message: 'Positions saved successfully'});
-      // save to mongo...
-    } catch (error) {      
-      res.status(500).json({ message: 'Error processing positions', error });
-    }
-  });
+      validate.params(matchIdSchema)
+    ),
+    poseController.createMapLayout
+);
+
 
 module.exports = router;

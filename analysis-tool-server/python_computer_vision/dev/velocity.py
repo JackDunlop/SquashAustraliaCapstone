@@ -1,5 +1,3 @@
-
-
 import matplotlib.pyplot as plt
 import numpy as np
 import json
@@ -7,6 +5,8 @@ import re
 import sys
 import os
 import cv2
+from poseEstimation import getMatchIDFromVideo 
+from jointangles import getVideoPathFromDataPath
 
 def extract_numeric_time(timestamp):
     numeric_part = re.findall(r"[-+]?\d*\.\d+|\d+", timestamp)[0]
@@ -40,12 +40,6 @@ def plotVelocityAndSave(wristDataList, dataPath):
 
     plt.savefig(filesave)
     #plt.show()
-
-
-def getMatchIDFromVideo(video_path):
-    baseName = os.path.basename(video_path)
-    match_id = os.path.splitext(baseName)[0]
-    return match_id
 
 def getVideoPathFromDataPath(dataPath):
     baseName = os.path.basename(dataPath)

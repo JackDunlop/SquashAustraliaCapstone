@@ -5,25 +5,14 @@ import re
 import sys
 import os
 import cv2
+from poseEstimation import getMatchIDFromVideo
+
+#from velocity import getVideoPathFromDataPath
 
 def extract_numeric_time(timestamp):
     numeric_part = re.findall(r"[-+]?\d*\.\d+|\d+", timestamp)[0]
     return float(numeric_part)
 
-def getMatchIDFromVideo(video_path):
-    baseName = os.path.basename(video_path)
-    match_id = os.path.splitext(baseName)[0]
-    return match_id
-
-def getVideoPathFromDataPath(dataPath):
-    baseName = os.path.basename(dataPath)
-    match_id = os.path.splitext(baseName)[0]
-    video_dir = os.path.join('..', '..', 'videos')
-    video_path = os.path.join(video_dir, f'{match_id}.mp4')
-    if not os.path.exists(video_path):
-        print(f"Error: Video file {video_path} not found.")
-        sys.exit(1)
-    return video_path
 
 def playVideo(videoPath):
     cap = cv2.VideoCapture(videoPath)
@@ -35,7 +24,6 @@ def playVideo(videoPath):
         ret, frame = cap.read()
         if not ret:
             break
-
     
         cv2.imshow("Video", frame)
         if cv2.waitKey(25) & 0xFF == ord('q'):

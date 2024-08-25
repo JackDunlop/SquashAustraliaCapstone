@@ -1,6 +1,52 @@
 const path = require('path');
 const fs = require("fs");
 const util = require('../lib/util');
+const videoFileFormats = ['mp4', 'mov', 'avi'];
+
+const {Match} = require('../models/Match')
+
+// const findPathOutputData = async () => {
+//     let _path = path.join(__dirname, `../poseEstimationData`);
+//     if (fs.existsSync(_path)) return _path;
+// }
+
+
+const createMapLayout = async (req, res, next) => {
+  const [result, err] = await util.handle(Match.findById(req.params.match_id));
+  
+  if (err || !result) {
+    return res.status(400).json('Failed to get match.');
+  }
+  console.log(result.courtBounds)
+  const courtBounds = result.courtBounds;
+
+  // Return both match_id and courtBounds in the response
+  return res.status(200).json({
+    match_id: result._id,
+    courtBounds: courtBounds
+  });
+};
+
+const findVideoFileMatchID = async (match_id) => {
+  for (let videoFileFormat of videoFileFormats) {
+      let _path = path.join(`${__dirname}../../videos/${match_id}.${videoFileFormat}`);
+
+      if (fs.existsSync(_path)) return _path;
+
+  }
+  return '';
+}
+const jsonFileFormats = ['json'];
+const findDataFileMatchID = async (match_id) => {
+  for (let jsonFileFormat of jsonFileFormats) {
+      let _path = path.join(`${__dirname}../../poseEstimationData/${match_id}.${jsonFileFormats}`);
+
+      if (fs.existsSync(_path)) return _path;
+
+  }
+  return '';
+}
+
 
 // upload video
 const upload = async (req, res, next) => {
@@ -26,9 +72,8 @@ const stream = async (req, res, next) => {
     res.status(400).send('Requires Range header');
     
   }
-
-  const videoFileFormats = ['mp4', 'mov', 'avi'];
-
+  
+  // Find video in output folder
   const findVideoFile = async () => {
     for (let videoFileFormat of videoFileFormats) {
       let _path = path.join(`${__dirname}../../poseOutputVideo/${req.params.match_id}.${videoFileFormat}`);
@@ -70,5 +115,8 @@ const stream = async (req, res, next) => {
 
 module.exports = {
   upload,
-  stream
+  stream,
+  findVideoFileMatchID,
+  findDataFileMatchID,
+  createMapLayout
 };

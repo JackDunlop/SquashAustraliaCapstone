@@ -139,8 +139,7 @@ def finaliseVideoProcessing(cap, frameData, videoPath):
 
 def main():
     videoPath = sys.argv[1]
-    poseEstimation(videoPath)
-     
+    poseEstimation(videoPath)     
 
 if __name__ == "__main__":
     main()

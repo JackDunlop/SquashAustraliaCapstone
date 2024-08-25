@@ -239,6 +239,3 @@ class ColourPicker extends React.Component {
 }
 
 export default withRouter(ColourPicker);
-
-
-

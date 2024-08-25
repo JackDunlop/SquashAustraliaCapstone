@@ -25,7 +25,7 @@ export default function ViewAnalytics({ baseUrl }) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {    
-  const fetchVideoStream = async () => {
+  const fetchVideoStream = async () => {      
     try {
       console.log(`Requesting video stream with URL: ${baseUrl}/pose/${matchId}`);
       const response = await axios.get(`${baseUrl}/pose/${matchId}`

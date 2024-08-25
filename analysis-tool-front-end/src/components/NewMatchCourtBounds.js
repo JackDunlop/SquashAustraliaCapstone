@@ -274,7 +274,14 @@ class CourtBounds extends React.Component {
     super(props);
     this.state = {
       value: this.props.location.state,
-      courtBounds: [[], [], [], [], [], []],
+      courtBounds: [
+        { position: positions.fL, coordinates: [] },
+        { position: positions.fR, coordinates: [] },
+        { position: positions.bL, coordinates: [] },
+        { position: positions.bR, coordinates: [] },
+        { position: positions.mL, coordinates: [] },
+        { position: positions.mR, coordinates: [] },
+      ],
     };
   }
   
@@ -303,27 +310,10 @@ class CourtBounds extends React.Component {
     return error;
   };
 
-  handleSubmit = async (event) => {
-    event.preventDefault();
+  handleSubmit = () => {    
     let form_error = this.formValidation();
-  
+    const keys = Object.keys(positions);  
     if (!form_error) {
-      try {
-        const courtUrl = `${baseURL}pose/newmatch/positions`;
-  
-        const response = await fetch(courtUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(this.state.courtBounds), // Send the court bounds data to the backend
-        });
-  
-        if (!response.ok) {
-          throw new Error(`Status: ${response.status}`);
-        }
-  
-        const data = await response.json();  
         this.props.history.push({
           pathname: '/new/colourPick',
           state: {
@@ -335,13 +325,9 @@ class CourtBounds extends React.Component {
             video: this.state.value.video,
             court_Bounds: this.state.courtBounds,
           },
-        });
-      } catch (error) {
-        console.error('Error sending positions:', error);
-      }
+        });     
     }
   };
-
   render() {
     return (
       <section style={{ display: 'flex', flexDirection: 'column' }}>

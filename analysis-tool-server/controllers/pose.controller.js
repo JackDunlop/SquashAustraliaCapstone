@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require("fs");
 const util = require('../lib/util');
 const videoFileFormats = ['mp4', 'mov', 'avi'];
-
+const { spawn } = require('child_process');
 const {Match} = require('../models/Match')
 
 // const findPathOutputData = async () => {
@@ -29,20 +29,49 @@ const findDataFileMatchID = async (match_id) => {
   return '';
 }
 
-const createMapLayout = async (req, res, next) => {
-  const [result, err] = await util.handle(Match.findById(req.params.match_id)); 
+// Send courtBounds to heatmap.py
+const createMapLayout = async (req, res) => {
+  const [result, err] = await util.handle(Match.findById()); 
   if (err || !result) {
     return res.status(400).json('Failed to get match.');
   }
+  try {
+    match_id = req.params.match_id
+    const jsonPath = await findDataFileMatchID(match_id);
+    if (!jsonPath) {
+      return res.status(400).json({ message: 'Data file not found' });
+    } 
 
-  const jsonPath = await findDataFileMatchID(result._id);  
-  const courtBounds = result.courtBounds;
+    const courtBounds = result.courtBounds;
+    // Flatten
+    const courtBoundsArgs = courtBounds.flat();
+    const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/heatmap.py'); 
+    const pythonProcess = spawn('python', [pythonScriptPath, ...courtBoundsArgs]);
 
-  // WIP
-  return res.status(200).json({
-    match_id: result._id,
-    courtBounds: courtBounds
-  });
+    pythonProcess.stdout.on('data', (data) => {
+      console.log(`Python stdout: ${data}`);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`Python stderr: ${data}`);
+    });
+
+    pythonProcess.on('close', (code) => {
+      console.log(`Python process exited with code ${code}`);
+      if (code === 0) {
+        res.status(200).json({ message: 'Finished' });
+      } else {
+        res.status(500).json({ message: 'Python script failed', code });
+      }
+    });
+    pythonProcess.on('error', (err) => {      
+      res.status(500).json({ message: 'Failed to start Python process', error: err.message });
+    });
+
+  } catch (error) {
+    console.error(`Unexpected error: ${error}`);
+    res.status(500).json({ message: 'Unexpected error', error: error.message });
+  }    
 };
 
 // upload video
@@ -52,7 +81,6 @@ const upload = async (req, res, next) => {
       path.join(
         `${__dirname}../../poseOutputVideo/${req.params.match_id}.${util.getVideoFileFormat(req.files.video.mimetype)}`
       );
-
     const [result, err] = await util.handleFileUpload(req.files.video, _path);
 
     if (err) return res.status(400).json(err.message);

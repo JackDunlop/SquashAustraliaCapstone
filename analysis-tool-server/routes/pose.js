@@ -10,7 +10,6 @@ const { matchIdSchema } = require('../validators/match.schemas');
 
 
 router.get('/:match_id', async (req, res) => {
-    
     try {
         const match_id = req.params.match_id;
         const videoFilePath = await poseController.findVideoFileMatchID(match_id);
@@ -83,11 +82,12 @@ router.get('/velocity/:match_id/:hand', async (req, res) => {
 router.get('/angles/:match_id', async (req, res) => {
     try {
         const match_id = req.params.match_id;
-        const jsonPath = await findDataFileMatchID(match_id);
+        const jsonPath = await poseController.findDataFileMatchID(match_id);
         if (!jsonPath) {
             return res.status(400).json({ message: 'Data file not found' });
-        }
-        const pythonProcess = spawn('python', ['./python_computer_vision/dev/jointangles.py', jsonPath]);
+        }        
+        const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/jointangles.py');        
+        const pythonProcess = spawn('python', [pythonScriptPath, jsonPath]);
         let stderrData = '';
         pythonProcess.stdout.on('data', (data) => {
             console.log(`stdout: ${data}`);
@@ -112,6 +112,7 @@ router.get('/angles/:match_id', async (req, res) => {
         res.status(500).json({ message: 'Unexpected error', error: error.message });
     }
 });
+
 router.get('/:match_id/stream', async (req, res) => {
     handle(
         validate.params(matchIdSchema)
@@ -119,8 +120,9 @@ router.get('/:match_id/stream', async (req, res) => {
     await poseController.stream(req,res)
        
 });
-// 6 points of court
-router.get('/:match_id/createLayout',
+
+// 6 points of court WIP
+router.get('/createLayout/:match_id',
     handle(
       validate.params(matchIdSchema)
     ),

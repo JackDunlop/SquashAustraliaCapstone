@@ -6,7 +6,8 @@ import sys
 import os
 import cv2
 from poseEstimation import getMatchIDFromVideo
-from velocity import getVideoPathFromDataPath
+
+#from velocity import getVideoPathFromDataPath
 
 def extract_numeric_time(timestamp):
     numeric_part = re.findall(r"[-+]?\d*\.\d+|\d+", timestamp)[0]

@@ -10,43 +10,40 @@ const {Match} = require('../models/Match')
 //     if (fs.existsSync(_path)) return _path;
 // }
 
+const findVideoFileMatchID = async (match_id) => {
+  for (let videoFileFormat of videoFileFormats) {
+    let _path = path.join(__dirname, '../videos', `${match_id}.${videoFileFormat}`);    
+    if (fs.existsSync(_path)) return _path;
+  }
+  return '';
+}
+
+const jsonFileFormats = ['json'];
+const findDataFileMatchID = async (match_id) => {
+  for (let jsonFileFormat of jsonFileFormats) {
+      let _path = path.join(__dirname, '../poseEstimationData',`${match_id}.${jsonFileFormats}`);
+      console.log(_path)
+      if (fs.existsSync(_path)) return _path;
+
+  }
+  return '';
+}
 
 const createMapLayout = async (req, res, next) => {
-  const [result, err] = await util.handle(Match.findById(req.params.match_id));
-  
+  const [result, err] = await util.handle(Match.findById(req.params.match_id)); 
   if (err || !result) {
     return res.status(400).json('Failed to get match.');
   }
-  console.log(result.courtBounds)
+
+  const jsonPath = await findDataFileMatchID(result._id);  
   const courtBounds = result.courtBounds;
 
-  // Return both match_id and courtBounds in the response
+  // WIP
   return res.status(200).json({
     match_id: result._id,
     courtBounds: courtBounds
   });
 };
-
-const findVideoFileMatchID = async (match_id) => {
-  for (let videoFileFormat of videoFileFormats) {
-      let _path = path.join(`${__dirname}../../videos/${match_id}.${videoFileFormat}`);
-
-      if (fs.existsSync(_path)) return _path;
-
-  }
-  return '';
-}
-const jsonFileFormats = ['json'];
-const findDataFileMatchID = async (match_id) => {
-  for (let jsonFileFormat of jsonFileFormats) {
-      let _path = path.join(`${__dirname}../../poseEstimationData/${match_id}.${jsonFileFormats}`);
-
-      if (fs.existsSync(_path)) return _path;
-
-  }
-  return '';
-}
-
 
 // upload video
 const upload = async (req, res, next) => {

@@ -31,7 +31,7 @@ const findDataFileMatchID = async (match_id) => {
 
 // Send courtBounds to heatmap.py
 const createMapLayout = async (req, res) => {
-  const [result, err] = await util.handle(Match.findById()); 
+  const [result, err] = await util.handle(Match.findById(req.params.match_id)); 
   if (err || !result) {
     return res.status(400).json('Failed to get match.');
   }
@@ -43,10 +43,10 @@ const createMapLayout = async (req, res) => {
     } 
 
     const courtBounds = result.courtBounds;
-    // Flatten
-    const courtBoundsArgs = courtBounds.flat();
+    const courtBoundsJson = JSON.stringify(courtBounds);
+    console.log(courtBoundsJson)  
     const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/heatmap.py'); 
-    const pythonProcess = spawn('python', [pythonScriptPath, ...courtBoundsArgs]);
+    const pythonProcess = spawn('python', [pythonScriptPath, ...courtBoundsJson]);
 
     pythonProcess.stdout.on('data', (data) => {
       console.log(`Python stdout: ${data}`);

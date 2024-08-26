@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+import json
 
 def create_heatmap(ball_positions, court_shape):
     heatmap = np.zeros(court_shape, dtype=np.float32)
@@ -11,17 +12,20 @@ def create_heatmap(ball_positions, court_shape):
 def plot_heatmap(heatmap):
     plt.imshow(heatmap, cmap='hot', interpolation='nearest')
     plt.colorbar()
-    plt.show()
-
-def process_court_bounds(court_bounds):
-    print("Received courtBounds:", court_bounds)
+    plt.show()   
 
 
 def main():
-    court_bounds = sys.argv[12]
-    process_court_bounds(court_bounds)
+    if len(sys.argv) > 1:
+        court_bounds_json = "".join(sys.argv[1:])
+        court_bounds = json.loads(court_bounds_json)
+        try:            
+            print(f"Received courtBounds: {court_bounds}")
+        except json.JSONDecodeError as e:
+            print(f"Failed to decode JSON: {e}")
+    
 
 if __name__ == "__main__":
     main()
     
-# WIP - aled 
+# WIP 

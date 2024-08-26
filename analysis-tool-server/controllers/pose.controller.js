@@ -18,10 +18,10 @@ const findVideoFileMatchID = async (match_id) => {
   return '';
 }
 
-const jsonFileFormats = ['json'];
+const dataFileFormats = ['json','msgpack'];
 const findDataFileMatchID = async (match_id) => {
-  for (let jsonFileFormat of jsonFileFormats) {
-      let _path = path.join(__dirname, '../poseEstimationData',`${match_id}.${jsonFileFormats}`);
+  for (let fileFormat of dataFileFormats) {
+      let _path = path.join(__dirname, '../poseEstimationData',`${match_id}.${dataFileFormats}`);
       console.log(_path)
       if (fs.existsSync(_path)) return _path;
 

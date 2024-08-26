@@ -3,6 +3,7 @@ import numpy as np
 import sys
 import json
 
+
 def create_heatmap(ball_positions, court_shape):
     heatmap = np.zeros(court_shape, dtype=np.float32)
     for pos in ball_positions:

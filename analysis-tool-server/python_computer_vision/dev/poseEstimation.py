@@ -1,18 +1,16 @@
-
-
 import sys
 import os
 import cv2
 from ultralytics import YOLO
 from enum import Enum
-import time
 import numpy as np
 import json
+import msgpack
 
 class GetKeypoint(Enum):
-    NOSE:           int = 0
-    LEFT_EYE:       int = 1
-    RIGHT_EYE:      int = 2
+    #NOSE:           int = 0
+    #LEFT_EYE:       int = 1
+    #RIGHT_EYE:      int = 2
     LEFT_EAR:       int = 3
     RIGHT_EAR:      int = 4
     LEFT_SHOULDER:  int = 5
@@ -96,6 +94,7 @@ def getDetection(model, frame, confThresh, modelClass):
                             tracker="bytetrack.yaml",
                               save=False)
 
+
 def processDetection(detection, frameTimestamp, frameData, frame):
    
     if detection[0].boxes is None or detection[0].boxes.id is None:
@@ -114,17 +113,61 @@ def processDetection(detection, frameTimestamp, frameData, frame):
 def extractKeypointData(kptArray, frame, track_id):
     kptArray = kptArray.cpu().numpy()
     keypointData = {}
+    left_hip = None
+    right_hip = None
+    left_ear = None
+    right_ear = None
+
     for pointIndex, point in enumerate(kptArray):
         x, y = int(point[0]), int(point[1])
-        keypointName = GetKeypoint(pointIndex).name
-        keypointData[keypointName] = [x, y]
-        cv2.circle(frame, (x, y), 3, (0, 255, 0), -1)
+        if x == 0 and y == 0:
+            continue  # Skip keypoints that are (0, 0)
+        if pointIndex == GetKeypoint.LEFT_HIP.value:
+            left_hip = (x, y)
+        elif pointIndex == GetKeypoint.RIGHT_HIP.value:
+            right_hip = (x, y)
+        elif pointIndex == GetKeypoint.LEFT_EAR.value:
+            left_ear = (x, y)  # Store temp
+        elif pointIndex == GetKeypoint.RIGHT_EAR.value:
+            right_ear = (x, y)  
+        else:
+            if pointIndex in [k.value for k in GetKeypoint]:
+                keypointName = GetKeypoint(pointIndex).name
+                keypointData[keypointName] = [x, y]
+                cv2.circle(frame, (x, y), 3, (0, 255, 0), -1)
+
+    # Calculate the central HIP point if both hips are detected
+    if left_hip and right_hip:
+        central_hip = [
+            int((left_hip[0] + right_hip[0]) / 2),
+            int((left_hip[1] + right_hip[1]) / 2)
+        ]
+        keypointData['HIP'] = central_hip
+        cv2.circle(frame, tuple(central_hip), 3, (255, 0, 0), -1)  
+    if left_ear and right_ear:
+        back_of_head = [
+            int((left_ear[0] + right_ear[0]) / 2),
+            int((left_ear[1] + right_ear[1]) / 2)
+        ]
+        keypointData['HEAD'] = back_of_head  # Add to keypointData
+        cv2.circle(frame, tuple(back_of_head), 3, (0, 0, 255), -1)  
     return keypointData
 
 def getMatchIDFromVideo(video_path):
     baseName = os.path.basename(video_path)
     match_id = os.path.splitext(baseName)[0]
     return match_id            
+
+# def finaliseVideoProcessing(cap, frameData, videoPath):
+#     cap.release()
+#     cv2.destroyAllWindows()
+#     match_id = getMatchIDFromVideo(videoPath)
+#     script_dir = os.path.dirname(os.path.abspath(__file__))
+#     output_dir = os.path.join(script_dir, '..', '..', 'poseEstimationData')
+#     os.makedirs(output_dir, exist_ok=True)
+#     filesave = os.path.join(output_dir, f'{match_id}.json')
+#     with open(filesave, 'w') as f:
+#         json.dump(frameData, f, indent=2)
 
 def finaliseVideoProcessing(cap, frameData, videoPath):
     cap.release()
@@ -133,9 +176,16 @@ def finaliseVideoProcessing(cap, frameData, videoPath):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(script_dir, '..', '..', 'poseEstimationData')
     os.makedirs(output_dir, exist_ok=True)
-    filesave = os.path.join(output_dir, f'{match_id}.json')
-    with open(filesave, 'w') as f:
-        json.dump(frameData, f, indent=2)
+    filesave = os.path.join(output_dir, f'{match_id}.msgpack')
+    with open(filesave, 'wb') as f:
+        packed_data = msgpack.packb(frameData, use_bin_type=True)
+        f.write(packed_data)
+
+def load_pose_estimation_data(file_path):
+    with open(file_path, 'rb') as f:
+        packed_data = f.read()
+        data = msgpack.unpackb(packed_data, raw=False)
+    return data
 
 def main():
     videoPath = sys.argv[1]

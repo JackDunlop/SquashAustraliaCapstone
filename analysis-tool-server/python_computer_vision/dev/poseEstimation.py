@@ -6,6 +6,8 @@ from enum import Enum
 import numpy as np
 import json
 import msgpack
+from heatmap import parse_court_bounds
+#from heatmap import apply_homography, parse_court_bounds
 
 class GetKeypoint(Enum):
     #NOSE:           int = 0
@@ -25,6 +27,7 @@ class GetKeypoint(Enum):
     RIGHT_KNEE:     int = 14
     LEFT_ANKLE:     int = 15
     RIGHT_ANKLE:    int = 16
+
 
 def poseEstimation(videoPath):
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -47,18 +50,20 @@ def poseEstimation(videoPath):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
     os.makedirs(output_dir, exist_ok=True)
-    filesave = os.path.join(output_dir, f'{match_id}.mp4') # change depending on codec
+    filesave = os.path.join(output_dir, f'{match_id}.mp4')  # change depending on codec
 
     # Use codec for required output
     fourcc = cv2.VideoWriter_fourcc(*'H264')  
     out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
     frameData = []
+    #src_points = parse_court_bounds()
     while True:
         ret, frame = cap.read()
         if not ret:
-            break
+            break        
+        # Apply homography transformation to the frame
+        #transform = apply_homography(frame, src_points, frame_width, frame_height)
         
-        # Resize frame for model input
         frame_resized = cv2.resize(frame, (640, 640))
         frameTimestamp = getFrameTimestamp(cap)
 
@@ -107,7 +112,7 @@ def processDetection(detection, frameTimestamp, frameData, frame):
         frameData.append({
             'track_id': int(track_id),
             'timestamp': frameTimestamp,
-            'keypoints': keypointData
+            'keypoints': keypointData            
         })
 
 def extractKeypointData(kptArray, frame, track_id):

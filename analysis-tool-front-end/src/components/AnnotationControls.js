@@ -134,6 +134,7 @@ export default function AnnotationControls({
                   type={game.type}
                   selected={selectedAnnotation.id === game.id}
                   disabled={false}
+                  match={match}
                 />
               </li>
             ))}
@@ -151,6 +152,7 @@ export default function AnnotationControls({
                             type={rally.type}
                             selected={selectedAnnotation.id === rally.id}
                             disabled={false}
+                            match={match}
                         />
                     </li>
                 ))}
@@ -168,6 +170,7 @@ export default function AnnotationControls({
                   type={player.type}
                   selected={selectedPlayer.id === player.id}
                   disabled={false}
+                  match={match}
                 />
               </li>
             ))}
@@ -185,6 +188,7 @@ export default function AnnotationControls({
                   name={shot.id}
                   selected={selectedAnnotation.id === shot.id}
                   disabled={!(Object.entries(selectedPlayer).length > 0)}
+                  match={match}
                 />
               </li>
             ))}
@@ -202,6 +206,7 @@ export default function AnnotationControls({
                         name={score.id}
                         selected={selectedAnnotation.id === score.id}
                         disabled={!(Object.entries(selectedPlayer).length > 0)}
+                        match={match}
                         />
                     </li>
                 ))}

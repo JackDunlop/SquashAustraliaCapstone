@@ -34,9 +34,9 @@ const transformAnnotations = (annotations) => {
       id: annotation._id,
       timestamp: annotation.timestamp,
       playerNumber: annotation.playerNumber,
-        components: annotation.components,
-        playerPos: annotation.playerPos,
-        opponentPos: annotation.opponentPos
+      components: annotation.components,
+      playerPos: annotation.playerPos,
+      opponentPos: annotation.opponentPos
     };
   });
 };

@@ -54,7 +54,7 @@ const getAll = async (req, res, next) => {
   if (err || !result) return res.status(400).json('Failed to get annotations.');
 
   const annotations = util.transformAnnotations(result.annotations);
-  console.log(annotations);
+  
   return res.status(200).json(annotations);
 };
 

@@ -39,13 +39,18 @@ const createMapLayout = async (req, res) => {
     if (!jsonPath) {
       return res.status(400).json({ message: 'Data file not found' });
     } 
-
     const courtBounds = result.courtBounds;
-    const courtBoundsJson = JSON.stringify(courtBounds);
-    console.log(courtBoundsJson)  
-    const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/heatmap.py'); 
-    const pythonProcess = spawn('python', [pythonScriptPath, ...courtBoundsJson]);
+    const courtLayout = JSON.stringify({
+      match_id: match_id,
+      courtBounds: courtBounds
+  });    
+    console.log(courtLayout)   
+    const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/heatmap.py');
 
+    const cleanLayout  = courtLayout.replace(/"/g, '\\"');
+    const pythonProcess = spawn('python', [pythonScriptPath, ...cleanLayout]);
+    pythonProcess.stdin.write(courtLayout);
+    pythonProcess.stdin.end();
     pythonProcess.stdout.on('data', (data) => {
       console.log(`Python stdout: ${data}`);
     });

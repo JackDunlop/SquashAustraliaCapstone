@@ -6,7 +6,7 @@ from enum import Enum
 import numpy as np
 import json
 import msgpack
-from heatmap import parse_court_bounds
+from heatmap import get_ordered_points, generate_heatmap, apply_homography
 #from heatmap import apply_homography, parse_court_bounds
 
 class GetKeypoint(Enum):
@@ -30,6 +30,8 @@ class GetKeypoint(Enum):
 
 
 def poseEstimation(videoPath):
+    ordered_points = get_ordered_points()
+    print(f"Ordered points: {ordered_points}") 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.join(script_dir, 'models')
     if not os.path.exists(models_dir):
@@ -43,7 +45,7 @@ def poseEstimation(videoPath):
         return
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = cap.get(cv2.CAP_PROP_FPS)
+    fps = cap.get(cv2.CAP_PROP_FPS)    
 
     # Prepare output file path
     match_id = getMatchIDFromVideo(videoPath)
@@ -55,27 +57,39 @@ def poseEstimation(videoPath):
     # Use codec for required output
     fourcc = cv2.VideoWriter_fourcc(*'H264')  
     out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
-    frameData = []
-    #src_points = parse_court_bounds()
+    frameData = []    
+    
+    heatmap_data = np.zeros((frame_height, frame_width), dtype=np.float32)
+
     while True:
         ret, frame = cap.read()
         if not ret:
-            break        
-        # Apply homography transformation to the frame
-        #transform = apply_homography(frame, src_points, frame_width, frame_height)
+            break       
         
+        transformed_frame = apply_homography(frame, ordered_points, frame_width, frame_height)
         frame_resized = cv2.resize(frame, (640, 640))
         frameTimestamp = getFrameTimestamp(cap)
 
         detection = getDetection(model, frame, confThresh, modelClass)
         if detection is None:
-            continue
-        processDetection(detection, frameTimestamp, frameData, frame)
-        out.write(frame)
+            continue  
+
+        for result in detection:
+            keypoints = result.keypoints
+            if keypoints is not None:
+                xy_coords = keypoints.xy[0]  # Assuming batch size of 1
+                for coord in xy_coords:
+                    x, y = int(coord[0]), int(coord[1])
+                    if 0 <= x < frame_width and 0 <= y < frame_height:
+                        heatmap_data[y, x] += 1  # Accumulate keypoint occurrences
+        processDetection(detection, frameTimestamp, frameData, transformed_frame)
+        out.write(transformed_frame)
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     finaliseVideoProcessing(cap, frameData, videoPath)
     out.release()
+    generate_heatmap(heatmap_data, frame_width, frame_height)
 
 def initialiseVideoCapture(videoPath):
     cap = cv2.VideoCapture(videoPath)
@@ -193,8 +207,9 @@ def load_pose_estimation_data(file_path):
     return data
 
 def main():
-    videoPath = sys.argv[1]
+    videoPath = sys.argv[1] 
     poseEstimation(videoPath)     
 
 if __name__ == "__main__":
+    
     main()

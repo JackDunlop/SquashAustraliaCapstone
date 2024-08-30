@@ -6,8 +6,7 @@ from enum import Enum
 import numpy as np
 import json
 import msgpack
-from heatmap import get_ordered_points, generate_heatmap, apply_homography
-#from heatmap import apply_homography, parse_court_bounds
+from heatmap import HeatMap, generate_heatmap, apply_homography
 
 class GetKeypoint(Enum):
     #NOSE:           int = 0
@@ -30,8 +29,11 @@ class GetKeypoint(Enum):
 
 
 def poseEstimation(videoPath):
-    ordered_points = get_ordered_points()
-    print(f"Ordered points: {ordered_points}") 
+   
+    # Prep Heatmap data
+    heatmap = HeatMap()
+    heatmap.load_from_file('python_computer_vision', 'courtBounds.json')
+    
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.join(script_dir, 'models')
     if not os.path.exists(models_dir):
@@ -49,6 +51,7 @@ def poseEstimation(videoPath):
 
     # Prepare output file path
     match_id = getMatchIDFromVideo(videoPath)
+    ordered_points = heatmap.getCourtBounds(match_id)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
     os.makedirs(output_dir, exist_ok=True)

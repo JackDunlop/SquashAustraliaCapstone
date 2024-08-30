@@ -44,7 +44,7 @@ const createMapLayout = async (req, res) => {
       match_id: match_id,
       courtBounds: courtBounds
   });    
-    console.log(courtLayout)   
+    //console.log(courtLayout)   
     const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/heatmap.py');
 
     const cleanLayout  = courtLayout.replace(/"/g, '\\"');

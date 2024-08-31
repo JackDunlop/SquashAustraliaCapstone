@@ -27,72 +27,34 @@ class GetKeypoint(Enum):
     LEFT_ANKLE:     int = 15
     RIGHT_ANKLE:    int = 16
 
-
-def poseEstimation(videoPath):
-   
-    # Prep Heatmap data
-    heatmap = HeatMap()
-    heatmap.load_from_file('python_computer_vision', 'courtBounds.json')
-    
+def process_video(videoPath):
+    # Initialize model
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.join(script_dir, 'models')
     if not os.path.exists(models_dir):
         os.makedirs(models_dir)
-    model_path = os.path.join(models_dir, 'yolov8m-pose.pt') 
+    model_path = os.path.join(models_dir, 'yolov8s-pose.pt') 
     model = YOLO(model_path) 
+    
+    # Set configuration
     confThresh = 0.80
     modelClass = [0]
     cap = initialiseVideoCapture(videoPath)
     if not cap:
-        return
-    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = cap.get(cv2.CAP_PROP_FPS)    
-
-    # Prepare output file path
-    match_id = getMatchIDFromVideo(videoPath)
-    ordered_points = heatmap.getCourtBounds(match_id)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
-    os.makedirs(output_dir, exist_ok=True)
-    filesave = os.path.join(output_dir, f'{match_id}.mp4')  # change depending on codec
-
-    # Use codec for required output
-    fourcc = cv2.VideoWriter_fourcc(*'H264')  
-    out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
-    frameData = []    
-    
-    heatmap_data = np.zeros((frame_height, frame_width), dtype=np.float32)
-
+        return None    
+    frameData = []
     while True:
         ret, frame = cap.read()
         if not ret:
-            break       
-        
-        transformed_frame = apply_homography(frame, ordered_points, frame_width, frame_height)
-        frame_resized = cv2.resize(frame, (640, 640))
+            break  
         frameTimestamp = getFrameTimestamp(cap)
-
+        resized_frame = cv2.resize(frame, (320, 320))
         detection = getDetection(model, frame, confThresh, modelClass)
         if detection is None:
-            continue  
-
-        for result in detection:
-            keypoints = result.keypoints
-            if keypoints is not None:
-                xy_coords = keypoints.xy[0]  # Assuming batch size of 1
-                for coord in xy_coords:
-                    x, y = int(coord[0]), int(coord[1])
-                    if 0 <= x < frame_width and 0 <= y < frame_height:
-                        heatmap_data[y, x] += 1  # Accumulate keypoint occurrences
-        processDetection(detection, frameTimestamp, frameData, transformed_frame)
-        out.write(transformed_frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    finaliseVideoProcessing(cap, frameData, videoPath)
-    out.release()
-    generate_heatmap(heatmap_data, frame_width, frame_height)
+            continue
+        processDetection(detection, frameTimestamp, frameData, frame)
+    cap.release()
+    return frameData
 
 def initialiseVideoCapture(videoPath):
     cap = cv2.VideoCapture(videoPath)
@@ -109,12 +71,12 @@ def getDetection(model, frame, confThresh, modelClass):
 
     return model.track(frame,
                         classes=modelClass,
-                          conf=confThresh,
-                            show=False,
-                            verbose=False, 
-                            persist=True, 
-                            tracker="bytetrack.yaml",
-                              save=False)
+                        conf=confThresh,
+                        show=False,
+                        verbose=False, 
+                        persist=True, 
+                        tracker="bytetrack.yaml",
+                        save=False)
 
 
 def processDetection(detection, frameTimestamp, frameData, frame):
@@ -178,27 +140,19 @@ def extractKeypointData(kptArray, frame, track_id):
 def getMatchIDFromVideo(video_path):
     baseName = os.path.basename(video_path)
     match_id = os.path.splitext(baseName)[0]
-    return match_id            
-
-# def finaliseVideoProcessing(cap, frameData, videoPath):
-#     cap.release()
-#     cv2.destroyAllWindows()
-#     match_id = getMatchIDFromVideo(videoPath)
-#     script_dir = os.path.dirname(os.path.abspath(__file__))
-#     output_dir = os.path.join(script_dir, '..', '..', 'poseEstimationData')
-#     os.makedirs(output_dir, exist_ok=True)
-#     filesave = os.path.join(output_dir, f'{match_id}.json')
-#     with open(filesave, 'w') as f:
-#         json.dump(frameData, f, indent=2)
-
-def finaliseVideoProcessing(cap, frameData, videoPath):
-    cap.release()
-    cv2.destroyAllWindows()
-    match_id = getMatchIDFromVideo(videoPath)
+    return match_id    
+        
+def store_pose_estimation_data(frameData, videoPath):
+    match_id = getMatchIDFromVideo(videoPath)    
+    # Store frame data as msgpack
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(script_dir, '..', '..', 'poseEstimationData')
     os.makedirs(output_dir, exist_ok=True)
     filesave = os.path.join(output_dir, f'{match_id}.msgpack')
+
+    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+    
+    np_data = np.array(frameData, dtype=object)        
     with open(filesave, 'wb') as f:
         packed_data = msgpack.packb(frameData, use_bin_type=True)
         f.write(packed_data)
@@ -210,9 +164,16 @@ def load_pose_estimation_data(file_path):
     return data
 
 def main():
-    videoPath = sys.argv[1] 
-    poseEstimation(videoPath)     
-
-if __name__ == "__main__":
+    videoPath = sys.argv[1]  
+    # Process video
+    frameData = process_video(videoPath)
     
+    if frameData:
+        # Store the data
+        store_pose_estimation_data(frameData, videoPath)
+    else:
+        print("Error: No data was collected.")
+        sys.exit
+    
+if __name__ == "__main__":
     main()

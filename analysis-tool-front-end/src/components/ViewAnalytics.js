@@ -22,23 +22,14 @@ export default function ViewAnalytics({ baseUrl }) {
   const playerRef = useRef(null);  // Reference to the Player component
   const [videoUrl, setVideoUrl] = useState(null);
   const [error, setError] = useState(null); // State to handle errors
-  const [isReady, setIsReady] = useState(false); 
-   
-  useEffect(() => {
-    const fetchMap = async () => { // Load routes that don't need PoseEstimation.py
-      try {
-        const response = await axios.get(`${baseUrl}/pose/createLayout/${matchId}`);
-        console.log("Map Request Successful", response.data)
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-    fetchMap(); 
-  }, []);
+  const [isReady, setIsReady] = useState(false);    
+  
 
   useEffect(() => { 
   const fetchVideoStream = async () => {         
     try {
+      const resMap = await axios.get(`${baseUrl}/pose/createLayout/${matchId}`);
+      console.log("Map Request Successful", resMap.data)
       console.log(`Requesting video stream with URL: ${baseUrl}/pose/${matchId}`);      
       const response = await axios.get(`${baseUrl}/pose/${matchId}`
       );        

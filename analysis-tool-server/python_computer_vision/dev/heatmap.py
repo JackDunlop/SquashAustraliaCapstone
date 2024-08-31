@@ -3,7 +3,8 @@ import sys
 import cv2
 import json
 import os
-
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 class HeatMap:
     def __init__(self):        
         self.maps = {}
@@ -78,19 +79,26 @@ def angle_from_centroid(point, centroid):
 
 
 
-def generate_heatmap(heatmap_data, frame_width, frame_height):
-    # Normalize the heatmap data to the range [0, 255]
-    heatmap_normalized = cv2.normalize(heatmap_data, None, 0, 255, cv2.NORM_MINMAX)
-    heatmap_normalized = np.uint8(heatmap_normalized)
+def generate_heatmap(heatmap_data):
+    # Normalize heatmap data
+    normalized_heatmap = normalize_heatmap(heatmap_data)
+    
+    # Convert to 8-bit image (0-255) for color mapping
+    heatmap_8bit = (normalized_heatmap * 255).astype(np.uint8)
+    
+    # Apply a colormap
+    heatmap_color = cv2.applyColorMap(heatmap_8bit, cv2.COLORMAP_JET)
+    
+    return heatmap_color
 
-    # Apply a color map to the heatmap
-    heatmap_colored = cv2.applyColorMap(heatmap_normalized, cv2.COLORMAP_JET)
-
-    # Save or display the heatmap
-    heatmap_output_path = 'heatmap_output.png'
-    cv2.imwrite(heatmap_output_path, heatmap_colored)
-    print(f"Heatmap saved to {heatmap_output_path}")
-
+def normalize_heatmap(heatmap_data):
+    min_val = np.min(heatmap_data)
+    max_val = np.max(heatmap_data)
+    if max_val > min_val:
+        normalized_heatmap = (heatmap_data - min_val) / (max_val - min_val)
+    else:
+        normalized_heatmap = heatmap_data  # No normalization needed if max_val == min_val
+    return normalized_heatmap
 
 def apply_homography(frame, ordered_points, frame_width, frame_height):
     # Define source and destination points for homography

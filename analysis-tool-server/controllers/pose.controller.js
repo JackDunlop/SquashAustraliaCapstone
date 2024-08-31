@@ -80,13 +80,16 @@ const createMapLayout = async (req, res) => {
 // upload video
 const upload = async (req, res, next) => {
   if (req.files && req.files.video) {
-    const _path =
-      path.join(
-        `${__dirname}../../poseOutputVideo/${req.params.match_id}.${util.getVideoFileFormat(req.files.video.mimetype)}`
-      );
-    const [result, err] = await util.handleFileUpload(req.files.video, _path);
-
-    if (err) return res.status(400).json(err.message);
+    const _path = path.join(
+      `${__dirname}../../poseOutputVideo/${req.params.match_id}.${util.getVideoFileFormat(req.files.video.mimetype)}`
+    );
+    try {
+      const result = await util.handleFileUpload(req.files.video, _path);
+      res.status(200).json(result);
+    } catch (err) {
+      console.log('err', err);
+      res.status(400).json(err.message);
+    }
   } else {
     res.status(400).json('No video file provided.');
   }

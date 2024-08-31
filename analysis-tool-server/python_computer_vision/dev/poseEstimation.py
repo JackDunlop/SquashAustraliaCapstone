@@ -32,8 +32,6 @@ def process_video(videoPath):
     # Initialize model
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.join(script_dir, '..','models')
-    output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
-    match_id = getMatchIDFromVideo(videoPath)    
 
     if not os.path.exists(models_dir):
         os.makedirs(models_dir)
@@ -45,7 +43,7 @@ def process_video(videoPath):
     cap = initialiseVideoCapture(videoPath)
     if not cap:
         return None 
-    frameData = videoWriter(cap, match_id, model, confThresh, modelClass)        
+    frameData = videoWriter(cap, videoPath, model, confThresh, modelClass)        
     cap.release()
     store_data = store_pose_estimation_data(frameData,videoPath)    
     return frameData

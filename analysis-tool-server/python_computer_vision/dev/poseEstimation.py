@@ -8,6 +8,7 @@ import json
 import msgpack
 from heatmap import HeatMap, generate_heatmap, apply_homography
 
+
 class GetKeypoint(Enum):
     #NOSE:           int = 0
     #LEFT_EYE:       int = 1
@@ -30,31 +31,68 @@ class GetKeypoint(Enum):
 def process_video(videoPath):
     # Initialize model
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    models_dir = os.path.join(script_dir, 'models')
+    models_dir = os.path.join(script_dir, '..','models')
+    output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
+    match_id = getMatchIDFromVideo(videoPath)    
+
     if not os.path.exists(models_dir):
         os.makedirs(models_dir)
-    model_path = os.path.join(models_dir, 'yolov8s-pose.pt') 
-    model = YOLO(model_path) 
-    
+    model_path = os.path.join(models_dir, 'yolov8s-pose.pt')
+    model = YOLO(model_path)
     # Set configuration
     confThresh = 0.80
     modelClass = [0]
     cap = initialiseVideoCapture(videoPath)
     if not cap:
-        return None    
+        return None 
+    frameData = videoWriter(cap, match_id, model, confThresh, modelClass)        
+    cap.release()
+    store_data = store_pose_estimation_data(frameData,videoPath)    
+    return frameData
+
+def store_pose_estimation_data(frameData, videoPath):
+    match_id = getMatchIDFromVideo(videoPath)    
+    # Store frame data as msgpack
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, '..', '..', 'poseEstimationData')
+    os.makedirs(output_dir, exist_ok=True)
+    filesave = os.path.join(output_dir, f'{match_id}.msgpack')
+          
+    with open(filesave, 'wb') as f:
+        packed_data = msgpack.packb(frameData, use_bin_type=True)
+        f.write(packed_data)
+    
+
+def videoWriter(cap,videoPath,model,confThresh,modelClass):
+    match_id = getMatchIDFromVideo(videoPath)
+    # Capture video properties
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)    
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
+    os.makedirs(output_dir, exist_ok=True)
+    filesave = os.path.join(output_dir, f'{match_id}.mp4')
+    # Initialise VideoWriter
+    fourcc = cv2.VideoWriter_fourcc(*'H264')    # Use MJPG for speed
+    out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
     frameData = []
     while True:
         ret, frame = cap.read()
         if not ret:
-            break  
-        frameTimestamp = getFrameTimestamp(cap)
-        resized_frame = cv2.resize(frame, (320, 320))
+            break
+        resized_frame = cv2.resize(frame, (320, 320)) 
+        frameTimestamp = getFrameTimestamp(cap)        
         detection = getDetection(model, frame, confThresh, modelClass)
         if detection is None:
-            continue
-        processDetection(detection, frameTimestamp, frameData, frame)
-    cap.release()
+            continue        
+        # Process the detection and store it in frameData
+        processDetection(detection, frameTimestamp, frameData, frame)        
+        out.write(frame)    
+    # Release VideoWriter
+    out.release()
     return frameData
+    
 
 def initialiseVideoCapture(videoPath):
     cap = cv2.VideoCapture(videoPath)
@@ -140,22 +178,8 @@ def extractKeypointData(kptArray, frame, track_id):
 def getMatchIDFromVideo(video_path):
     baseName = os.path.basename(video_path)
     match_id = os.path.splitext(baseName)[0]
-    return match_id    
-        
-def store_pose_estimation_data(frameData, videoPath):
-    match_id = getMatchIDFromVideo(videoPath)    
-    # Store frame data as msgpack
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(script_dir, '..', '..', 'poseEstimationData')
-    os.makedirs(output_dir, exist_ok=True)
-    filesave = os.path.join(output_dir, f'{match_id}.msgpack')
-
-    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-    
-    np_data = np.array(frameData, dtype=object)        
-    with open(filesave, 'wb') as f:
-        packed_data = msgpack.packb(frameData, use_bin_type=True)
-        f.write(packed_data)
+    return match_id   
+ 
 
 def load_pose_estimation_data(file_path):
     with open(file_path, 'rb') as f:
@@ -165,15 +189,9 @@ def load_pose_estimation_data(file_path):
 
 def main():
     videoPath = sys.argv[1]  
-    # Process video
-    frameData = process_video(videoPath)
     
-    if frameData:
-        # Store the data
-        store_pose_estimation_data(frameData, videoPath)
-    else:
-        print("Error: No data was collected.")
-        sys.exit
+    frameData = process_video(videoPath)    
+    
     
 if __name__ == "__main__":
     main()

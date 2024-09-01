@@ -25,7 +25,6 @@ const upload = async (req, res, next) => {
   }
 };
 
-
 // stream video
 const stream = async (req, res, next) => {
   // ensure there is a range given for the video

@@ -163,16 +163,13 @@ def main():
 
     court_bounds = data.get('courtBounds')   
     match_id = data.get('match_id')
-    ordered_points = findPoints(court_bounds)
-    print(ordered_points)
+    ordered_points = findPoints(court_bounds)    
     myMap = HeatMap()
     myMap.setMapLayout(match_id,ordered_points)
-    print(match_id)
+    
     
     width, height = get_heatmap_size(ordered_points)
     print(f"Heatmap Size: Width = {width}, Height = {height}")
-
-    
 
 if __name__ == "__main__":
     main()

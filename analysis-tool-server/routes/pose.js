@@ -127,6 +127,7 @@ router.get('/createLayout/:match_id',
       validate.params(matchIdSchema)
     ),
     poseController.createMapLayout
+    
 );
 
 

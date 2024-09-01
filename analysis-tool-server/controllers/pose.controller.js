@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require("fs");
 const util = require('../lib/util');
 const videoFileFormats = ['mp4', 'mov', 'avi'];
-
+const { spawn } = require('child_process');
 const {Match} = require('../models/Match')
 
 // const findPathOutputData = async () => {
@@ -18,44 +18,83 @@ const findVideoFileMatchID = async (match_id) => {
   return '';
 }
 
-const jsonFileFormats = ['json'];
+const dataFileFormats = ['json','msgpack'];
 const findDataFileMatchID = async (match_id) => {
-  for (let jsonFileFormat of jsonFileFormats) {
-      let _path = path.join(__dirname, '../poseEstimationData',`${match_id}.${jsonFileFormats}`);
-      console.log(_path)
+  for (let fileFormat of dataFileFormats) {
+      let _path = path.join(__dirname, '../poseEstimationData', `${match_id}.${fileFormat}`);      
       if (fs.existsSync(_path)) return _path;
-
   }
   return '';
 }
 
-const createMapLayout = async (req, res, next) => {
-  const [result, err] = await util.handle(Match.findById(req.params.match_id)); 
-  if (err || !result) {
-    return res.status(400).json('Failed to get match.');
-  }
+// Send courtBounds to heatmap.py
+const createMapLayout = async (req, res) => {
+  const match_id = req.params.match_id;
+  try {    
+    const [result,err] = await util.handle(Match.findById(match_id)); 
+    if (err||!result) {
+      return res.status(400).json('Failed to get match.');
+    }
+    const courtBounds = result.courtBounds;
+    let stderrData = '';
+    const courtLayout = JSON.stringify({
+      match_id: match_id,
+      courtBounds: courtBounds
+    }); 
+      
+    console.log('Sending data to Python script:', courtLayout);
+    
+    const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/heatmap.py');
+    const pythonProcess = spawn('python', [pythonScriptPath]); 
 
-  const jsonPath = await findDataFileMatchID(result._id);  
-  const courtBounds = result.courtBounds;
+    // Write the JSON data to the Python script's stdin
+    pythonProcess.stdin.write(courtLayout, 'utf-8', (err) => {
+      if (err) {
+          console.error('Error writing to stdin:', err);
+          return res.status(500).json({ message: 'Error writing to Python process', error: err.message });
+      }
+      pythonProcess.stdin.end();
+    });
+    
+        pythonProcess.stdout.on('data', (data) => {
+            console.log(`stdout: ${data}`);
+        });
+        pythonProcess.stderr.on('data', (data) => {
+            stderrData += data.toString();
+        });
 
-  // WIP
-  return res.status(200).json({
-    match_id: result._id,
-    courtBounds: courtBounds
-  });
+    pythonProcess.on('close', (code) => {
+      console.log(`Python process exited with code ${code}`);
+      if (code === 0) {
+        res.status(200).json({ message: 'Finished' });
+      } else {
+        res.status(500).json({ message: 'Python script failed', code });
+      }
+    });
+
+    pythonProcess.on('error', (err) => {      
+      res.status(500).json({ message: 'Failed to start Python process', error: err.message });
+    });
+
+  } catch (error) {
+    console.error(`Unexpected error: ${error}`);
+    res.status(500).json({ message: 'Unexpected error', error: error.message });
+  }    
 };
 
 // upload video
 const upload = async (req, res, next) => {
   if (req.files && req.files.video) {
-    const _path =
-      path.join(
-        `${__dirname}../../poseOutputVideo/${req.params.match_id}.${util.getVideoFileFormat(req.files.video.mimetype)}`
-      );
-
-    const [result, err] = await util.handleFileUpload(req.files.video, _path);
-
-    if (err) return res.status(400).json(err.message);
+    const _path = path.join(
+      `${__dirname}../../poseOutputVideo/${req.params.match_id}.${util.getVideoFileFormat(req.files.video.mimetype)}`
+    );
+    try {
+      const result = await util.handleFileUpload(req.files.video, _path);
+      res.status(200).json(result);
+    } catch (err) {
+      console.log('err', err);
+      res.status(400).json(err.message);
+    }
   } else {
     res.status(400).json('No video file provided.');
   }

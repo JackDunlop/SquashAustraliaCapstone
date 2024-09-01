@@ -22,33 +22,42 @@ export default function ViewAnalytics({ baseUrl }) {
   const playerRef = useRef(null);  // Reference to the Player component
   const [videoUrl, setVideoUrl] = useState(null);
   const [error, setError] = useState(null); // State to handle errors
-  const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(false);    
+  
 
-  useEffect(() => {    
-  const fetchVideoStream = async () => {      
+  useEffect(() => { 
+  const fetchVideoStream = async () => {         
     try {
-      console.log(`Requesting video stream with URL: ${baseUrl}/pose/${matchId}`);
-      const response = await axios.get(`${baseUrl}/pose/${matchId}`
-      );        
-      if (response.status === 200) {
-        const stream = `${baseUrl}/pose/${matchId}/stream`
-        setVideoUrl(stream);
-        setIsReady(true); // Video URL is ready to be played       
-            
-      } else {
-        console.log('Video is not ready, status code:', response.status);
-        setError('The video is not ready. Please try again later.');
+      const resMap = await axios.get(`${baseUrl}/pose/createLayout/${matchId}`);
+      if (resMap.status === 200) {
+        console.log("Map Request Successful")  
+        try{         
+        console.log(`Requesting video stream with URL: ${baseUrl}/pose/${matchId}`);      
+        const response = await axios.get(`${baseUrl}/pose/${matchId}`);        
+          if (response.status === 200) {
+            const stream = `${baseUrl}/pose/${matchId}/stream`
+            setVideoUrl(stream);
+            setIsReady(true); // Video URL is ready to be played       
+          }    
+          else {
+            console.log('Video is not ready, status code:', response.status);
+            setError('The video is not ready. Please try again later.');
+          }
+        } catch(e){
+          console.error("Error fetching video", e)
+          setError('There was an issue loading the video. Please try again later.')
+        }             
       }
     } catch (error) {
-      console.error('Error fetching the video stream:', error);
-      setError('There was an issue loading the video. Please try again later.');        
+      console.error('Error fetching MapData:', error);
+      setError('Error fetching Map data');        
     } finally {
       setLoading(false); // Ensure loading state is set to false in all cases      
     }
   };  
   fetchVideoStream();
 }, [baseUrl, matchId]);
-
+  
  // Handle play button press
  const handlePlayButton = () => {
   if (playerRef.current && isReady) {

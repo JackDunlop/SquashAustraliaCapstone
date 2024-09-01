@@ -4,21 +4,17 @@ import cv2
 import json
 import os
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
+import math
+from poseEstimation import load_pose_estimation_data
 
 class HeatMap:
     def __init__(self):        
         self.maps = {}
-        
-    def setMapLayout(self, match_id, court_bounds):         
-        centroid = calculate_centroid(court_bounds) 
-        ordered_points = findPoints(court_bounds)        
-        # Store as key
-        ordered_points = [p.tolist() for p in ordered_points]
-        self.maps[match_id] = ordered_points       
-        
 
-        self.save_to_file(os.path.join(os.curdir, "python_computer_vision"), 'courtBounds.json') 
+    def setMapLayout(self, match_id, ordered_points):
+        ordered_points_serializable = {key: value.tolist() for key, value in ordered_points.items()}        
+        self.maps[match_id] = ordered_points_serializable
+        print(f"Map layout for match_id {match_id} has been set.") 
     
     def getMapLayout(self):
         return self.maps
@@ -46,9 +42,6 @@ class HeatMap:
         else:
             print(f"No data file found at {filepath}")
 
-           
-
-
 def findPoints(points):
     points = np.array(points, dtype=np.float32)
     centroid = calculate_centroid(points)
@@ -64,8 +57,32 @@ def findPoints(points):
         bot_left = min(below_centroid, key=lambda p: (p[0], p[1]))  # Smallest x, and lowest y
         bot_right = max(below_centroid, key=lambda p: (p[0], -p[1]))
 
-    return top_left, top_right, bot_left, bot_right   
-    
+    return {
+        'top_left': top_left,
+        'top_right': top_right,
+        'bot_left': bot_left,
+        'bot_right': bot_right,
+    } 
+
+def get_heatmap_size(court_coordinates):
+    top_left = court_coordinates['top_left']
+    top_right = court_coordinates['top_right']
+    bot_left = court_coordinates['bot_left']
+    bot_right = court_coordinates['bot_right']
+
+    # Widths
+    top_width = calculate_distance(top_left, top_right)
+    bottom_width = calculate_distance(bot_left, bot_right)
+    # Heights
+    left_height = calculate_distance(top_left, bot_left)
+    right_height = calculate_distance(top_right, bot_right)
+
+    # Average the widths and heights
+    average_width = (top_width + bottom_width) / 2
+    average_height = (left_height + right_height) / 2
+
+    return int(average_width), int(average_height)
+
 # centre of court
 def calculate_centroid(points):
     #print(np.mean(points, axis=0))
@@ -77,20 +94,39 @@ def angle_from_centroid(point, centroid):
     angle = np.arctan2(dy, dx)
     return angle
 
+def calculate_distance(point1, point2):
+    # Calculate the Euclidean distance between two points
+    return np.linalg.norm(np.array(point1) - np.array(point2))
 
 
 
-def generate_heatmap(heatmap_data):
-    # Normalize heatmap data
-    normalized_heatmap = normalize_heatmap(heatmap_data)
-    
-    # Convert to 8-bit image (0-255) for color mapping
-    heatmap_8bit = (normalized_heatmap * 255).astype(np.uint8)
-    
-    # Apply a colormap
-    heatmap_color = cv2.applyColorMap(heatmap_8bit, cv2.COLORMAP_JET)
-    
-    return heatmap_color
+def generate_heatmap(maps, match_id, pose_estimation_data):
+    # Get court layout
+    court_bounds = maps.getCourtBounds(match_id)
+    heatmap_width, heatmap_height = get_heatmap_size({
+        "top_left": court_bounds[0],
+        "top_right": court_bounds[1],
+        "bot_left": court_bounds[2],
+        "bot_right": court_bounds[3]
+    })
+
+    # Initialize the heatmap
+    heatmap_data = np.zeros((heatmap_height, heatmap_width))
+
+    # Accumulate keypoints into the heatmap
+    for frame_data in pose_estimation_data:
+        for keypoint in frame_data['keypoints'].values():
+            x, y = keypoint
+            if 0 <= x < heatmap_width and 0 <= y < heatmap_height:
+                heatmap_data[int(y), int(x)] += 1
+
+    # Normalize the heatmap data
+    heatmap_data = normalize_heatmap(heatmap_data)
+
+    # Visualize the heatmap
+    plt.imshow(heatmap_data, cmap='hot', interpolation='nearest')
+    plt.colorbar()
+    plt.show()
 
 def normalize_heatmap(heatmap_data):
     min_val = np.min(heatmap_data)
@@ -116,19 +152,28 @@ def apply_homography(frame, ordered_points, frame_width, frame_height):
     transformed_frame = cv2.warpPerspective(frame, H, (frame_width, frame_height))
     return transformed_frame
 
-def main():
-    try:        
-        input_data = sys.stdin.read()        
-        data = json.loads(input_data) 
-        match_id = data['match_id']
-        court_bounds = data['courtBounds']
-        maps = HeatMap()
-        maps.setMapLayout(match_id, court_bounds)
-
+def main():    
+    input_data = sys.stdin.read()
+    try:
+        data = json.loads(input_data)
+        print(f"Received data: {data}")
     except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}")
+        print(f"Failed to decode JSON: {e}", file=sys.stderr)
         sys.exit(1)
+
+    court_bounds = data.get('courtBounds')   
+    match_id = data.get('match_id')
+    ordered_points = findPoints(court_bounds)
+    print(ordered_points)
+    myMap = HeatMap()
+    myMap.setMapLayout(match_id,ordered_points)
+    print(match_id)
     
+    width, height = get_heatmap_size(ordered_points)
+    print(f"Heatmap Size: Width = {width}, Height = {height}")
+
+    
+
 if __name__ == "__main__":
     main()
 

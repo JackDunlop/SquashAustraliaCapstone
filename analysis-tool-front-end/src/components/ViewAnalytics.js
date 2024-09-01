@@ -29,29 +29,35 @@ export default function ViewAnalytics({ baseUrl }) {
   const fetchVideoStream = async () => {         
     try {
       const resMap = await axios.get(`${baseUrl}/pose/createLayout/${matchId}`);
-      console.log("Map Request Successful", resMap.data)
-      console.log(`Requesting video stream with URL: ${baseUrl}/pose/${matchId}`);      
-      const response = await axios.get(`${baseUrl}/pose/${matchId}`
-      );        
-      if (response.status === 200) {
-        const stream = `${baseUrl}/pose/${matchId}/stream`
-        setVideoUrl(stream);
-        setIsReady(true); // Video URL is ready to be played       
-            
-      } else {
-        console.log('Video is not ready, status code:', response.status);
-        setError('The video is not ready. Please try again later.');
+      if (resMap.status === 200) {
+        console.log("Map Request Successful")  
+        try{         
+        console.log(`Requesting video stream with URL: ${baseUrl}/pose/${matchId}`);      
+        const response = await axios.get(`${baseUrl}/pose/${matchId}`);        
+          if (response.status === 200) {
+            const stream = `${baseUrl}/pose/${matchId}/stream`
+            setVideoUrl(stream);
+            setIsReady(true); // Video URL is ready to be played       
+          }    
+          else {
+            console.log('Video is not ready, status code:', response.status);
+            setError('The video is not ready. Please try again later.');
+          }
+        } catch(e){
+          console.error("Error fetching video", e)
+          setError('There was an issue loading the video. Please try again later.')
+        }             
       }
     } catch (error) {
-      console.error('Error fetching the video stream:', error);
-      setError('There was an issue loading the video. Please try again later.');        
+      console.error('Error fetching MapData:', error);
+      setError('Error fetching Map data');        
     } finally {
       setLoading(false); // Ensure loading state is set to false in all cases      
     }
   };  
   fetchVideoStream();
 }, [baseUrl, matchId]);
-
+  
  // Handle play button press
  const handlePlayButton = () => {
   if (playerRef.current && isReady) {

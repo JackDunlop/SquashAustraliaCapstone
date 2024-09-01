@@ -6,7 +6,6 @@ from enum import Enum
 import numpy as np
 import json
 import msgpack
-from heatmap import HeatMap, generate_heatmap, apply_homography
 
 
 class GetKeypoint(Enum):
@@ -32,6 +31,8 @@ def process_video(videoPath):
     # Initialize model
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.join(script_dir, '..','models')
+    output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
+        
 
     if not os.path.exists(models_dir):
         os.makedirs(models_dir)
@@ -45,8 +46,9 @@ def process_video(videoPath):
         return None 
     frameData = videoWriter(cap, videoPath, model, confThresh, modelClass)        
     cap.release()
-    store_data = store_pose_estimation_data(frameData,videoPath)    
-    return frameData
+    store_data = store_pose_estimation_data(frameData,videoPath)
+     
+    return store_data
 
 def store_pose_estimation_data(frameData, videoPath):
     match_id = getMatchIDFromVideo(videoPath)    
@@ -59,7 +61,7 @@ def store_pose_estimation_data(frameData, videoPath):
     with open(filesave, 'wb') as f:
         packed_data = msgpack.packb(frameData, use_bin_type=True)
         f.write(packed_data)
-    
+    return match_id
 
 def videoWriter(cap,videoPath,model,confThresh,modelClass):
     match_id = getMatchIDFromVideo(videoPath)

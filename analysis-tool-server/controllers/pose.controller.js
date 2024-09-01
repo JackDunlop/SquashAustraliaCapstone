@@ -29,35 +29,39 @@ const findDataFileMatchID = async (match_id) => {
 
 // Send courtBounds to heatmap.py
 const createMapLayout = async (req, res) => {
-  const [result, err] = await util.handle(Match.findById(req.params.match_id)); 
-  if (err || !result) {
-    return res.status(400).json('Failed to get match.');
-  }
-  try {
-    match_id = req.params.match_id
-    const jsonPath = await findDataFileMatchID(match_id);
-    if (!jsonPath) {
-      return res.status(400).json({ message: 'Data file not found' });
-    } 
+  const match_id = req.params.match_id;
+  try {    
+    const [result,err] = await util.handle(Match.findById(match_id)); 
+    if (err||!result) {
+      return res.status(400).json('Failed to get match.');
+    }
     const courtBounds = result.courtBounds;
+    let stderrData = '';
     const courtLayout = JSON.stringify({
       match_id: match_id,
       courtBounds: courtBounds
-  });    
-    //console.log(courtLayout)   
+    }); 
+      
+    console.log('Sending data to Python script:', courtLayout);
+    
     const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/heatmap.py');
+    const pythonProcess = spawn('python', [pythonScriptPath]); 
 
-    const cleanLayout  = courtLayout.replace(/"/g, '\\"');
-    const pythonProcess = spawn('python', [pythonScriptPath, ...cleanLayout]);
-    pythonProcess.stdin.write(courtLayout);
-    pythonProcess.stdin.end();
-    pythonProcess.stdout.on('data', (data) => {
-      console.log(`Python stdout: ${data}`);
+    // Write the JSON data to the Python script's stdin
+    pythonProcess.stdin.write(courtLayout, 'utf-8', (err) => {
+      if (err) {
+          console.error('Error writing to stdin:', err);
+          return res.status(500).json({ message: 'Error writing to Python process', error: err.message });
+      }
+      pythonProcess.stdin.end();
     });
-
-    pythonProcess.stderr.on('data', (data) => {
-      console.error(`Python stderr: ${data}`);
-    });
+    
+        pythonProcess.stdout.on('data', (data) => {
+            console.log(`stdout: ${data}`);
+        });
+        pythonProcess.stderr.on('data', (data) => {
+            stderrData += data.toString();
+        });
 
     pythonProcess.on('close', (code) => {
       console.log(`Python process exited with code ${code}`);
@@ -67,6 +71,7 @@ const createMapLayout = async (req, res) => {
         res.status(500).json({ message: 'Python script failed', code });
       }
     });
+
     pythonProcess.on('error', (err) => {      
       res.status(500).json({ message: 'Failed to start Python process', error: err.message });
     });

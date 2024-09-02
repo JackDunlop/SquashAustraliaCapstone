@@ -152,8 +152,37 @@ def apply_homography(frame, ordered_points, frame_width, frame_height):
     transformed_frame = cv2.warpPerspective(frame, H, (frame_width, frame_height))
     return transformed_frame
 
-def main():    
+
+
+# main 1 - Before poseEstimation
+def create_layout(data):    
+    court_bounds = data.get('courtBounds')
+    match_id = data.get('match_id')
+    if not court_bounds or not match_id:
+        print("Invalid data: 'courtBounds' or 'match_id' missing", file=sys.stderr)
+        sys.exit(1)
+    ordered_points = findPoints(court_bounds)
+    myMap = HeatMap()
+    myMap.setMapLayout(match_id, ordered_points)
+
+    width, height = get_heatmap_size(ordered_points)
+    print(f"Heatmap Size: Width = {width}, Height = {height}")
+
+# main 2 - After poseEstimation
+def generate_map(data):
+    match_id = data.get('match_id')    
+    print(f"Generating map for match_id: {match_id}")
+
+
+if __name__ == "__main__":    
+
+    if len(sys.argv) < 2:
+        print("No operation specified. Use 'createLayout' or 'generateMap'.", file=sys.stderr)
+        sys.exit(1)
+
+    operation = sys.argv[1]    
     input_data = sys.stdin.read()
+
     try:
         data = json.loads(input_data)
         print(f"Received data: {data}")
@@ -161,16 +190,11 @@ def main():
         print(f"Failed to decode JSON: {e}", file=sys.stderr)
         sys.exit(1)
 
-    court_bounds = data.get('courtBounds')   
-    match_id = data.get('match_id')
-    ordered_points = findPoints(court_bounds)    
-    myMap = HeatMap()
-    myMap.setMapLayout(match_id,ordered_points)
-    
-    
-    width, height = get_heatmap_size(ordered_points)
-    print(f"Heatmap Size: Width = {width}, Height = {height}")
-
-if __name__ == "__main__":
-    main()
+    if operation == "createLayout":
+        create_layout(data)
+    elif operation == "generateMap":
+        generate_map(data)
+    else:
+        print(f"Unknown operation: {operation}", file=sys.stderr)
+        sys.exit(1)
 

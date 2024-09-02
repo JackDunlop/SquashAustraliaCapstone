@@ -121,7 +121,7 @@ router.get('/:match_id/stream', async (req, res) => {
        
 });
 
-// 6 points of court WIP
+// courtMap layout and size
 router.get('/createLayout/:match_id',
     handle(
       validate.params(matchIdSchema)
@@ -129,6 +129,40 @@ router.get('/createLayout/:match_id',
     poseController.createMapLayout
     
 );
+// map After Data is loaded
+router.get('/generateMap/:match_id', async (req, res) => {
+    try {
+        const match_id = req.params.match_id;
+        const jsonPath = await poseController.findDataFileMatchID(match_id);
+        if (!jsonPath) {
+            return res.status(400).json({ message: 'Data file not found' });
+        }        
+        const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/createMap.py');        
+        const pythonProcess = spawn('python', [pythonScriptPath, jsonPath]);
+        let stderrData = '';
+        pythonProcess.stdout.on('data', (data) => {
+            console.log(`stdout: ${data}`);
+        });
+        pythonProcess.stderr.on('data', (data) => {
+            stderrData += data.toString();
+        });
+        pythonProcess.on('close', (code) => {
+            console.log(`child process exited with code ${code}`);
+            if (code === 0) {
+                res.status(200).json({ message: 'Finished' });
+            } else {
+                res.status(500).json({ message: 'Process failed', code: code, error: stderrData });
+            }
+        });
+        pythonProcess.on('error', (err) => {
+            console.error(`Failed to start process: ${err}`);
+            res.status(500).json({ message: 'Failed to start process', error: err.message });
+        });
+    } catch (error) {
+        console.error(`Unexpected error: ${error}`);
+        res.status(500).json({ message: 'Unexpected error', error: error.message });
+    }
+});
 
 
 module.exports = router;

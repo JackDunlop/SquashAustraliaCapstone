@@ -14,6 +14,8 @@ const transformMatches = (matches) => {
       players: {
         player1: [match.players.player1.firstName, match.players.player1.lastName].join(' '),
         player2: [match.players.player2.firstName, match.players.player2.lastName].join(' '),
+        player1Color: match.playerRGB[0],
+        player2Color: match.playerRGB[1],
       },
       description: match.description,
       duration: match.duration, 

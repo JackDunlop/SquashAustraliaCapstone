@@ -34,22 +34,30 @@ const transformAnnotations = (annotations) => {
       id: annotation._id,
       timestamp: annotation.timestamp,
       playerNumber: annotation.playerNumber,
-        components: annotation.components,
-        playerPos: annotation.playerPos,
-        opponentPos: annotation.opponentPos
+      components: annotation.components,
+      playerPos: annotation.playerPos,
+      opponentPos: annotation.opponentPos
     };
   });
 };
 
 const handleFileUpload = (_file, path) => {
-  return handle(
-    new Promise((resolve, reject) => {
-      _file.mv(path, function (err) {
-        if (err) reject(new Error('Failed to upload file.'));
-        else resolve('File successfully uploaded.');
-      })
-    })
-  );
+  return new Promise((resolve, reject) => {
+    if (!_file || !_file.mv) {
+      console.error('Invalid file object or missing mv method');
+      return reject(new Error('Invalid file object or missing mv method'));
+    }
+
+    _file.mv(path, function (err) {
+      if (err) {
+        console.error('Failed to upload file:', err);
+        reject(new Error('Failed to upload file.'));
+      } else {
+        console.log('File successfully uploaded to', path);
+        resolve('File successfully uploaded.');
+      }
+    });
+  });
 };
 
 

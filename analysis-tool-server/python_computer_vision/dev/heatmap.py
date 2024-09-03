@@ -152,25 +152,61 @@ def apply_homography(frame, ordered_points, frame_width, frame_height):
     transformed_frame = cv2.warpPerspective(frame, H, (frame_width, frame_height))
     return transformed_frame
 
-def main():    
-    input_data = sys.stdin.read()
-    try:
-        data = json.loads(input_data)
-        print(f"Received data: {data}")
-    except json.JSONDecodeError as e:
-        print(f"Failed to decode JSON: {e}", file=sys.stderr)
-        sys.exit(1)
 
-    court_bounds = data.get('courtBounds')   
-    match_id = data.get('match_id')
-    ordered_points = findPoints(court_bounds)    
+
+# main 1 - Before poseEstimation
+def create_layout(court_data):    
+    court_bounds = court_data.get('courtBounds')
+    match_id = court_data.get('match_id')
+    if not court_bounds or not match_id:
+        print("Invalid data: 'courtBounds' or 'match_id' missing", file=sys.stderr)
+        sys.exit(1)
+    ordered_points = findPoints(court_bounds)
     myMap = HeatMap()
-    myMap.setMapLayout(match_id,ordered_points)
-    
-    
+    myMap.setMapLayout(match_id, ordered_points)
+
     width, height = get_heatmap_size(ordered_points)
     print(f"Heatmap Size: Width = {width}, Height = {height}")
 
-if __name__ == "__main__":
-    main()
+# # main 2 - After poseEstimation
+def generate_map(datapath):
+    try:
+        # Open the file in binary mode
+        with open(datapath, 'rb') as f:
+            data = f.read() 
+            print(f"Binary data length: {len(data)} bytes")
+    except Exception as e:
+        print(f"Failed to load file: {e}", file=sys.stderr)
+        sys.exit(1)
+    print('Binary data loaded, generating heatmap...')
+
+
+if __name__ == "__main__":    
+    if len(sys.argv) < 2:
+        print("No operation specified. Use 'createLayout' or 'generateMap'.", file=sys.stderr)
+        sys.exit(1)
+
+    operation = sys.argv[1]  # Expecting 'createLayout' or 'generateMap'
+    
+    if operation == "createLayout":
+        # Read the JSON data from stdin
+        try:
+            input_data = sys.stdin.read()
+            data = json.loads(input_data)
+        except json.JSONDecodeError as e:
+            print(f"Failed to decode JSON: {e}", file=sys.stderr)
+            sys.exit(1)
+
+        create_layout(data)
+    
+    elif operation == "generateMap":
+        datapath = sys.argv[2]
+        generate_map(datapath)
+
+    else:
+        print(f"Unknown operation: {operation}", file=sys.stderr)
+        sys.exit(1)
+
+    
+    
 

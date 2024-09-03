@@ -22,7 +22,12 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 // middleware setup
-app.use(logger('dev'));
+app.use(logger('dev',{
+  skip: function (req, res) {
+    // Skip logging for any request that includes "stream" in the URL
+    return req.originalUrl.includes('stream');
+  }
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

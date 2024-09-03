@@ -5,10 +5,35 @@ const videoFileFormats = ['mp4', 'mov', 'avi'];
 const { spawn } = require('child_process');
 const {Match} = require('../models/Match')
 
-// const findPathOutputData = async () => {
-//     let _path = path.join(__dirname, `../poseEstimationData`);
-//     if (fs.existsSync(_path)) return _path;
-// }
+const runPythonScript = (res,scriptName,args = []) =>
+{
+  const pythonScriptPath = path.join(__dirname, `../python_computer_vision/dev/${scriptName}`); 
+      console.log('Script Name in runPythonScript:', scriptName)        
+      const pythonProcess = spawn('python', [pythonScriptPath, ...args]);
+      let stdoutData = '';
+      let stderrData = '';
+      pythonProcess.stdout.on('data', (data) => {
+          stdoutData += data.toString();         
+          console.log(`stdout: ${data}`);
+      });
+      pythonProcess.stderr.on('data', (data) => {
+          stderrData += data.toString();
+      });
+      pythonProcess.on('close', (code) => {
+          console.log(`child process exited with code ${code}`);
+          if (code === 0) {
+            console.log(`Script executed successfully:\n${stdoutData}`);
+            res.status(200).json({ message: 'Finished',output: stdoutData });
+          } else {
+            console.error(`Script failed with exit code ${code} and error:\n${stderrData}`);
+            res.status(500).json({ message: 'Process failed', code: code, error: stderrData });
+          }
+      });
+      pythonProcess.on('error', (err) => {
+          console.error(`Failed to start process: ${err}`);
+          res.status(500).json({ message: 'Failed to start process', error: err.message });
+      });
+}
 
 const findVideoFileMatchID = async (match_id) => {
   for (let videoFileFormat of videoFileFormats) {
@@ -17,6 +42,7 @@ const findVideoFileMatchID = async (match_id) => {
   }
   return '';
 }
+
 
 const dataFileFormats = ['json','msgpack'];
 const findDataFileMatchID = async (match_id) => {
@@ -42,10 +68,10 @@ const createMapLayout = async (req, res) => {
       courtBounds: courtBounds
     }); 
       
-    console.log('Sending data to Python script:', courtLayout);
+    //console.log('Sending data to Python script:', courtLayout);
     
     const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/heatmap.py');
-    const pythonProcess = spawn('python', [pythonScriptPath]); 
+    const pythonProcess = spawn('python', [pythonScriptPath, 'createLayout']); 
 
     // Write the JSON data to the Python script's stdin
     pythonProcess.stdin.write(courtLayout, 'utf-8', (err) => {
@@ -63,14 +89,15 @@ const createMapLayout = async (req, res) => {
             stderrData += data.toString();
         });
 
-    pythonProcess.on('close', (code) => {
-      console.log(`Python process exited with code ${code}`);
-      if (code === 0) {
-        res.status(200).json({ message: 'Finished' });
-      } else {
-        res.status(500).json({ message: 'Python script failed', code });
-      }
-    });
+        pythonProcess.on('close', (code) => {
+          console.log(`Python process exited with code ${code}`);
+          if (code === 0) {
+            res.status(200).json({ message: 'Finished' });
+          } else {
+            console.error(`Python stderr: ${stderrData}`);
+            res.status(500).json({ message: 'Python script failed', code, error: stderrData });
+          }
+        });
 
     pythonProcess.on('error', (err) => {      
       res.status(500).json({ message: 'Failed to start Python process', error: err.message });
@@ -105,27 +132,21 @@ const stream = async (req, res, next) => {
   // ensure there is a range given for the video
   const range = req.headers.range;
   if (!range) {
-    res.status(400).send('Requires Range header');
-    
-  }
-  
+    res.status(400).send('Requires Range header');    
+  }  
   // Find video in output folder
   const findVideoFile = async () => {
     for (let videoFileFormat of videoFileFormats) {
       let _path = path.join(`${__dirname}../../poseOutputVideo/${req.params.match_id}.${videoFileFormat}`);
-      console.log(_path)      
+      //console.log(_path)      
       // ensure that the video file exists
       if (fs.existsSync(_path)) return _path;
     }
-
     return '';
   }
-
   const videoFilePath = await findVideoFile();
-
   if (videoFilePath !== '') {
     const videoSize = fs.statSync(videoFilePath).size;
-
     // parse range
     const CHUNK_SIZE = 10 ** 6; // 1MB
     const start = Number(range.replace(/\D/g, ''));
@@ -154,5 +175,6 @@ module.exports = {
   stream,
   findVideoFileMatchID,
   findDataFileMatchID,
-  createMapLayout
+  createMapLayout,
+  runPythonScript
 };

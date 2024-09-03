@@ -74,7 +74,7 @@ router.get('/generateMap/:match_id', async (req, res) => {
         if (!jsonPath) {
             return res.status(400).json({ message: 'Data file not found' });
         }
-        runScript = poseController.runPythonScript(res, 'createMap.py', ['generateMap', jsonPath])
+        runScript = poseController.runPythonScript(res, 'heatmap.py', ['generateMap', jsonPath])
     } catch (error) {
         console.error(`Unexpected error: ${error.message}`);
         res.status(500).json({ message: 'Unexpected error', error: error.message });

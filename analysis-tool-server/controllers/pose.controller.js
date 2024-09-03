@@ -8,10 +8,12 @@ const {Match} = require('../models/Match')
 const runPythonScript = (res,scriptName,args = []) =>
 {
   const pythonScriptPath = path.join(__dirname, `../python_computer_vision/dev/${scriptName}`); 
-      console.log('Script Name in runPythonScript:', scriptName)       
+      console.log('Script Name in runPythonScript:', scriptName)        
       const pythonProcess = spawn('python', [pythonScriptPath, ...args]);
+      let stdoutData = '';
       let stderrData = '';
       pythonProcess.stdout.on('data', (data) => {
+          stdoutData += data.toString();         
           console.log(`stdout: ${data}`);
       });
       pythonProcess.stderr.on('data', (data) => {
@@ -20,9 +22,11 @@ const runPythonScript = (res,scriptName,args = []) =>
       pythonProcess.on('close', (code) => {
           console.log(`child process exited with code ${code}`);
           if (code === 0) {
-              res.status(200).json({ message: 'Finished' });
+            console.log(`Script executed successfully:\n${stdoutData}`);
+            res.status(200).json({ message: 'Finished',output: stdoutData });
           } else {
-              res.status(500).json({ message: 'Process failed', code: code, error: stderrData });
+            console.error(`Script failed with exit code ${code} and error:\n${stderrData}`);
+            res.status(500).json({ message: 'Process failed', code: code, error: stderrData });
           }
       });
       pythonProcess.on('error', (err) => {
@@ -64,7 +68,7 @@ const createMapLayout = async (req, res) => {
       courtBounds: courtBounds
     }); 
       
-    console.log('Sending data to Python script:', courtLayout);
+    //console.log('Sending data to Python script:', courtLayout);
     
     const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/heatmap.py');
     const pythonProcess = spawn('python', [pythonScriptPath, 'createLayout']); 
@@ -128,27 +132,21 @@ const stream = async (req, res, next) => {
   // ensure there is a range given for the video
   const range = req.headers.range;
   if (!range) {
-    res.status(400).send('Requires Range header');
-    
-  }
-  
+    res.status(400).send('Requires Range header');    
+  }  
   // Find video in output folder
   const findVideoFile = async () => {
     for (let videoFileFormat of videoFileFormats) {
       let _path = path.join(`${__dirname}../../poseOutputVideo/${req.params.match_id}.${videoFileFormat}`);
-      console.log(_path)      
+      //console.log(_path)      
       // ensure that the video file exists
       if (fs.existsSync(_path)) return _path;
     }
-
     return '';
   }
-
   const videoFilePath = await findVideoFile();
-
   if (videoFilePath !== '') {
     const videoSize = fs.statSync(videoFilePath).size;
-
     // parse range
     const CHUNK_SIZE = 10 ** 6; // 1MB
     const start = Number(range.replace(/\D/g, ''));

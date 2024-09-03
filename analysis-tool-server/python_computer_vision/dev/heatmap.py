@@ -171,11 +171,14 @@ def create_layout(court_data):
 # # main 2 - After poseEstimation
 def generate_map(datapath):
     try:
-        with open(datapath, 'r') as f:
-            data = json.load(f)
+        # Open the file in binary mode
+        with open(datapath, 'rb') as f:
+            data = f.read() 
+            print(f"Binary data length: {len(data)} bytes")
     except Exception as e:
         print(f"Failed to load file: {e}", file=sys.stderr)
         sys.exit(1)
+    print('Binary data loaded, generating heatmap...')
 
 
 if __name__ == "__main__":    

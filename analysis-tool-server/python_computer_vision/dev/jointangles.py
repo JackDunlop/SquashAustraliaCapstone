@@ -5,6 +5,7 @@ import re
 import sys
 import os
 import cv2
+import msgpack
 from poseEstimation import getMatchIDFromVideo
 
 #from velocity import getVideoPathFromDataPath
@@ -81,8 +82,8 @@ def saveData(dataPath, angleDataList):
 def main():
     dataPath = sys.argv[1]
     
-    with open(dataPath, 'r') as f:
-        data = json.load(f)
+    with open(dataPath, 'rb') as f:
+        data = msgpack.unpack(f, raw=False)
 
     onlyDataToExtract = [
         'LEFT_SHOULDER', 'RIGHT_SHOULDER', 'LEFT_ELBOW', 'RIGHT_ELBOW', 
@@ -97,7 +98,7 @@ def main():
         for keypoint in onlyDataToExtract:
             if keypoint in entry['keypoints']:
                 keypointData = entry['keypoints'][keypoint]
-                extractedData[keypoint] = keypointData
+            extractedData[keypoint] = keypointData
         
         if extractedData:  
             calculateAngleJoints(extractedData, 'LEFT_SHOULDER', 'LEFT_ELBOW', 'LEFT_WRIST', 'LEFT_ARM_ANGLE')

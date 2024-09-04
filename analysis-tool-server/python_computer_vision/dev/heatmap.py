@@ -197,6 +197,29 @@ def mapToCourt(pose_estimation_data, homography_matrix):
 
     return mapped_points
 
+def plot_map(mapped_points):
+   # Define colors for different players
+    colors = ['red', 'blue', 'green', 'orange', 'purple']  
+
+    plt.figure(figsize=(8, 6))  # Set the figure size
+
+    # Iterate over each player's track_id and their respective points
+    for idx, (track_id, points) in enumerate(mapped_points.items()):
+        x, y = zip(*points)  # Unpack the x and y coordinates
+        plt.scatter(x, y, color=colors[idx % len(colors)], label=f'Player {track_id}')
+
+    plt.title('Mapped Player Positions on the Court')
+    plt.xlabel('Court X Coordinate')
+    plt.ylabel('Court Y Coordinate')
+    plt.gca().invert_yaxis()  # Invert y-axis to match court view
+    plt.legend()  # Show the player legend
+    plt.grid(True)  # Add a grid for better readability
+    plt.show() 
+    
+
+
+
+
 # main 1 - Before poseEstimation
 def create_layout(court_data):       
     court_bounds = court_data.get('courtBounds') 
@@ -232,7 +255,7 @@ def generate_map(datapath):
     lengths = myMap.getCourtsize(match_id)
     matrix = homography(points)
     mapMatrix = mapToCourt(data,matrix) 
-    #print(mapMatrix)   
+    plot_map(mapMatrix)   
   
 if __name__ == "__main__": 
     operation = sys.argv[1]

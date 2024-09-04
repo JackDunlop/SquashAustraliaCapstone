@@ -5,35 +5,39 @@ const videoFileFormats = ['mp4', 'mov', 'avi'];
 const { spawn } = require('child_process');
 const {Match} = require('../models/Match')
 
-const runPythonScript = (res,scriptName,args = []) =>
-{
+const runPythonScript = (res, scriptName, args = []) => {
   const pythonScriptPath = path.join(__dirname, `../python_computer_vision/dev/${scriptName}`); 
-      console.log('Script Name in runPythonScript:', scriptName)        
-      const pythonProcess = spawn('python', [pythonScriptPath, ...args]);
-      let stdoutData = '';
-      let stderrData = '';
-      pythonProcess.stdout.on('data', (data) => {
-          stdoutData += data.toString();         
-          console.log(`stdout: ${data}`);
-      });
-      pythonProcess.stderr.on('data', (data) => {
-          stderrData += data.toString();
-      });
-      pythonProcess.on('close', (code) => {
-          console.log(`child process exited with code ${code}`);
-          if (code === 0) {
-            console.log(`Script executed successfully:\n${stdoutData}`);
-            res.status(200).json({ message: 'Finished',output: stdoutData });
-          } else {
-            console.error(`Script failed with exit code ${code} and error:\n${stderrData}`);
-            res.status(500).json({ message: 'Process failed', code: code, error: stderrData });
-          }
-      });
-      pythonProcess.on('error', (err) => {
-          console.error(`Failed to start process: ${err}`);
-          res.status(500).json({ message: 'Failed to start process', error: err.message });
-      });
-}
+  //console.log(`Running script: ${scriptName} with args: ${args}`);
+  const pythonProcess = spawn('python', [pythonScriptPath, ...args]);
+
+  let stdoutData = '';
+  let stderrData = '';
+
+  pythonProcess.stdout.on('data', (data) => {
+      const output = data.toString();
+      stdoutData += output
+      console.log(output)
+  });
+
+  pythonProcess.stderr.on('data', (data) => {
+      stderrData += data.toString();
+  });
+
+  pythonProcess.on('close', (code) => {
+      if (code === 0) {
+          console.log(`Script ${scriptName} executed successfully.`);
+          res.status(200).json({ message: 'Finished', output: stdoutData });
+      } else {
+          console.error(`Script ${scriptName} failed with exit code ${code}: ${stderrData}`);
+          res.status(500).json({ message: 'Process failed', code: code, error: stderrData });
+      }
+  });
+
+  pythonProcess.on('error', (err) => {
+      console.error(`Failed to start script ${scriptName}: ${err}`);
+      res.status(500).json({ message: 'Failed to start process', error: err.message });
+  });
+};
 
 const findVideoFileMatchID = async (match_id) => {
   for (let videoFileFormat of videoFileFormats) {
@@ -61,19 +65,20 @@ const createMapLayout = async (req, res) => {
     if (err||!result) {
       return res.status(400).json('Failed to get match.');
     }
+    const players = result.players
     const courtBounds = result.courtBounds;
     let stderrData = '';
     const courtLayout = JSON.stringify({
       match_id: match_id,
-      courtBounds: courtBounds
-    }); 
+      courtBounds: courtBounds,
       
-    //console.log('Sending data to Python script:', courtLayout);
-    
+    });
+    console.log(courtLayout)
+       
+    //console.log('Sending data to Python script:', courtLayout);    
     const pythonScriptPath = path.join(__dirname, '../python_computer_vision/dev/heatmap.py');
     const pythonProcess = spawn('python', [pythonScriptPath, 'createLayout']); 
-
-    // Write the JSON data to the Python script's stdin
+    
     pythonProcess.stdin.write(courtLayout, 'utf-8', (err) => {
       if (err) {
           console.error('Error writing to stdin:', err);

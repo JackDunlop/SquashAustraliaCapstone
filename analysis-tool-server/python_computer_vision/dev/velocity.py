@@ -5,8 +5,9 @@ import re
 import sys
 import os
 import cv2
+import msgpack
 from poseEstimation import getMatchIDFromVideo 
-from jointangles import getVideoPathFromDataPath
+#from jointangles import getVideoPathFromDataPath
 
 def extract_numeric_time(timestamp):
     numeric_part = re.findall(r"[-+]?\d*\.\d+|\d+", timestamp)[0]
@@ -75,8 +76,8 @@ def main():
     dataPath = sys.argv[1]
     leftOrRight = sys.argv[2].upper() + "_WRIST"
     #videoPath = getVideoPathFromDataPath(dataPath)  
-    with open(dataPath, 'r') as f:
-        data = json.load(f)
+    with open(dataPath, 'rb') as f:
+        data = msgpack.unpack(f, raw=False)
 
     wristDataList = []
     for entry in data:

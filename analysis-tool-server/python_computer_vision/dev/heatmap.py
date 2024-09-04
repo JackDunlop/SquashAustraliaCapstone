@@ -5,83 +5,120 @@ import json
 import os
 import matplotlib.pyplot as plt
 import math
-from poseEstimation import load_pose_estimation_data
+import msgpack
 
-class HeatMap:
-    def __init__(self):        
-        self.maps = {}
+class HeatMap:    
+    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'courtData.json')
+    
+    def __init__(self,match_id): 
+        self.maps = {}               
+        if match_id is not None:
+            self.maps[match_id] = {}
 
-    def setMapLayout(self, match_id, ordered_points):
-        ordered_points_serializable = {key: value.tolist() for key, value in ordered_points.items()}        
-        self.maps[match_id] = ordered_points_serializable
-        print(f"Map layout for match_id {match_id} has been set.") 
+    def setMapLayout(self,match_id,points):        
+        if match_id not in self.maps:
+            self.maps[match_id] = {}      
+        self.maps[match_id]['MapLayout'] = points       
     
-    def getMapLayout(self):
-        return self.maps
+    def getMapLayout(self, match_id):       
+        return self.maps.get(match_id, {}).get('MapLayout') 
     
-    def getCourtBounds(self, match_id):
-        ordered_points = self.maps.get(match_id)
-        if ordered_points is not None:
-            return np.array(ordered_points)  
-        raise ValueError(f"No data found for match_id {match_id}") 
-    
-    def save_to_file(self, directory, filename):    
-        if not os.path.exists(directory):
-            os.makedirs(directory)        
-        filepath = os.path.join(directory, filename)
-        with open(filepath, 'w') as f:
-            json.dump(self.maps, f, indent=4)  
-            print(f"Data saved to {filepath}")
-        
-    def load_from_file(self, directory, filename):
-        filepath = os.path.join(directory, filename)
-        if os.path.exists(filepath):
-            with open(filepath, 'r') as f:
-                self.maps = json.load(f)
-            print(f"Data loaded from {filepath}")
+    def setCourtsize(self,match_id,lengths):        
+        if match_id not in self.maps:
+            self.maps[match_id] = {}
+        self.maps[match_id]['CourtLengths'] = lengths
+
+    def getCourtsize(self, match_id):         
+        return self.maps.get(match_id, {}).get('CourtLengths')        
+
+    def saveToFile(self):
+        try:
+            os.makedirs(os.path.dirname(HeatMap.filepath), exist_ok=True)            
+            if os.path.exists(HeatMap.filepath):
+                with open(HeatMap.filepath, 'r') as f:
+                    existing_data = json.load(f)
+            else:
+                existing_data = {}
+            
+            existing_data.update(self.maps)
+
+            with open(HeatMap.filepath, 'w') as f:
+                json.dump(existing_data, f, indent=4)
+            print(f"Data successfully saved to {HeatMap.filepath}")
+
+        except Exception as e:
+            print(f"Failed to save data: {e}")
+            
+    def load_from_file(self):
+        if os.path.exists(HeatMap.filepath):
+            try:                
+                with open(HeatMap.filepath, 'r') as f:
+                    loaded_data = json.load(f)
+                    for match_id, match_data in loaded_data.items():
+                        self.maps[match_id] = {
+                            'MapLayout': match_data.get('MapLayout'),
+                            'CourtLengths': match_data.get('CourtLengths')
+                        }                    
+            except Exception as e:
+                print(f"Failed to load data: {e}")
         else:
-            print(f"No data file found at {filepath}")
+            print(f"No data file found at {HeatMap.filepath}")
 
-def findPoints(points):
-    points = np.array(points, dtype=np.float32)
-    centroid = calculate_centroid(points)
+# Gets the size of each length of court in pixels 
+def fourLengths(court_coordinates):      
     
-    above_centroid = [p for p in points if p[1] > centroid[1]]
-    below_centroid = [p for p in points if p[1] < centroid[1]]
-    
-    if above_centroid:        
-        top_left = min(above_centroid, key=lambda p: (p[0], -p[1]))  # Smallest x, and highest y
-        top_right = max(above_centroid, key=lambda p: (p[0], p[1]))    
-
-    if below_centroid:
-        bot_left = min(below_centroid, key=lambda p: (p[0], p[1]))  # Smallest x, and lowest y
-        bot_right = max(below_centroid, key=lambda p: (p[0], -p[1]))
-
-    return {
-        'top_left': top_left,
-        'top_right': top_right,
-        'bot_left': bot_left,
-        'bot_right': bot_right,
-    } 
-
-def get_heatmap_size(court_coordinates):
     top_left = court_coordinates['top_left']
     top_right = court_coordinates['top_right']
     bot_left = court_coordinates['bot_left']
-    bot_right = court_coordinates['bot_right']
-
-    # Widths
+    bot_right = court_coordinates['bot_right']    
+    
     top_width = calculate_distance(top_left, top_right)
-    bottom_width = calculate_distance(bot_left, bot_right)
-    # Heights
+    bot_width = calculate_distance(bot_left, bot_right)    
     left_height = calculate_distance(top_left, bot_left)
-    right_height = calculate_distance(top_right, bot_right)
-
-    # Average the widths and heights
-    average_width = (top_width + bottom_width) / 2
-    average_height = (left_height + right_height) / 2
-
-    return int(average_width), int(average_height)
+    right_height = calculate_distance(top_right, bot_right)        
+    
+    return {
+        'top_width': top_width,
+        'bottom_width': bot_width,
+        'left_height': left_height,
+        'right_height': right_height,
+    }    
+ 
+# Gets 4 corner coordinates of court, after working out which one
+def fourPoints(court_coordinates):    
+    points = np.array(court_coordinates, dtype=np.float32)
+    centroid = calculate_centroid(points)
+    
+    top_left = None
+    top_right = None
+    bot_left = None
+    bot_right = None
+    
+    for point in points:
+        if point[0] <= centroid[0] and point[1] <= centroid[1]:
+            
+            if top_left is None or (point[0] < top_left[0] and point[1] < top_left[1]):
+                top_left = point
+        elif point[0] > centroid[0] and point[1] <= centroid[1]:
+            
+            if top_right is None or (point[0] > top_right[0] and point[1] < top_right[1]):
+                top_right = point
+        elif point[0] <= centroid[0] and point[1] > centroid[1]:
+            
+            if bot_left is None or (point[0] < bot_left[0] and point[1] > bot_left[1]):
+                bot_left = point
+        elif point[0] > centroid[0] and point[1] > centroid[1]:
+            
+            if bot_right is None or (point[0] > bot_right[0] and point[1] > bot_right[1]):
+                bot_right = point    
+    coords = {
+        'top_left': top_left,
+        'top_right': top_right,
+        'bot_left': bot_left,
+        'bot_right': bot_right
+    }
+    coords = {key: value.flatten().tolist() for key, value in coords.items()}  # to print clean
+    return coords 
 
 # centre of court
 def calculate_centroid(points):
@@ -95,104 +132,139 @@ def angle_from_centroid(point, centroid):
     return angle
 
 def calculate_distance(point1, point2):
-    # Calculate the Euclidean distance between two points
-    return np.linalg.norm(np.array(point1) - np.array(point2))
+    point1 = np.array(point1)
+    point2 = np.array(point2)
+    # Euclidean distance
+    return np.linalg.norm(point1 - point2)
 
-
-
-def generate_heatmap(maps, match_id, pose_estimation_data):
-    # Get court layout
-    court_bounds = maps.getCourtBounds(match_id)
-    heatmap_width, heatmap_height = get_heatmap_size({
-        "top_left": court_bounds[0],
-        "top_right": court_bounds[1],
-        "bot_left": court_bounds[2],
-        "bot_right": court_bounds[3]
-    })
-
-    # Initialize the heatmap
-    heatmap_data = np.zeros((heatmap_height, heatmap_width))
-
-    # Accumulate keypoints into the heatmap
-    for frame_data in pose_estimation_data:
-        for keypoint in frame_data['keypoints'].values():
-            x, y = keypoint
-            if 0 <= x < heatmap_width and 0 <= y < heatmap_height:
-                heatmap_data[int(y), int(x)] += 1
-
-    # Normalize the heatmap data
-    heatmap_data = normalize_heatmap(heatmap_data)
-
-    # Visualize the heatmap
-    plt.imshow(heatmap_data, cmap='hot', interpolation='nearest')
-    plt.colorbar()
-    plt.show()
-
-def normalize_heatmap(heatmap_data):
-    min_val = np.min(heatmap_data)
-    max_val = np.max(heatmap_data)
-    if max_val > min_val:
-        normalized_heatmap = (heatmap_data - min_val) / (max_val - min_val)
-    else:
-        normalized_heatmap = heatmap_data  # No normalization needed if max_val == min_val
-    return normalized_heatmap
-
-def apply_homography(frame, ordered_points, frame_width, frame_height):
-    # Define source and destination points for homography
-    src_pts = np.array(ordered_points, dtype=np.float32)
-    dst_pts = np.array([
+def homography(fourpoints):
+    flatmap = [
         [0, 0],
-        [frame_width - 1, 0],
-        [frame_width - 1, frame_height - 1],
-        [0, frame_height - 1]
+        [1200, 0],
+        [1200, 600],
+        [0, 600]
+    ]    
+    screen_coords = np.array([
+        fourpoints['top_left'],
+        fourpoints['top_right'],
+        fourpoints['bot_right'],
+        fourpoints['bot_left']
     ], dtype=np.float32)
+    
+    exit_coords = np.array(flatmap,dtype=np.float32)
+    homography_matrix, status = cv2.findHomography(screen_coords, exit_coords)
+    if status is None or np.sum(status) < 4:
+        raise ValueError("Homography calculation failed. Check your input points.")
+    return homography_matrix
 
-    # Compute the homography matrix
-    H, _ = cv2.findHomography(src_pts, dst_pts)
-    transformed_frame = cv2.warpPerspective(frame, H, (frame_width, frame_height))
-    return transformed_frame
+
+def mapToCourt(pose_estimation_data, homography_matrix):    
+    
+    onlyDataToExtract = ['LEFT_ANKLE', 'RIGHT_ANKLE']
+
+    mapped_points = {}
+    
+    for entry in pose_estimation_data:
+        track_id = entry.get('track_id')  
+        if not track_id:
+            continue  
+
+        mapListData = {}
+        
+        for keypoint in onlyDataToExtract:              
+            if keypoint in entry['keypoints']:
+                keypointData = entry['keypoints'][keypoint]
+                mapListData[keypoint] = keypointData
+
+        # If both left and right ankle data is available
+        if 'LEFT_ANKLE' in mapListData and 'RIGHT_ANKLE' in mapListData:
+            left_ankle = mapListData['LEFT_ANKLE']
+            right_ankle = mapListData['RIGHT_ANKLE']
+            
+            player_position = np.array([
+                (left_ankle[0] + right_ankle[0]) / 2,  
+                (left_ankle[1] + right_ankle[1]) / 2,  
+                1  # Homogeneous coordinate
+            ]).reshape(-1, 1)
+            
+            # Apply homography
+            mapped_position = np.dot(homography_matrix, player_position)            
+            mapped_position /= mapped_position[2, 0]  # Normalize
+
+            if track_id not in mapped_points:
+                mapped_points[track_id] = []
+            mapped_points[track_id].append((mapped_position[0, 0], mapped_position[1, 0]))
+
+    return mapped_points
+
+def plot_map(mapped_points):
+   # Define colors for different players
+    colors = ['red', 'blue', 'green', 'orange', 'purple']  
+
+    plt.figure(figsize=(8, 6))  # Set the figure size
+
+    # Iterate over each player's track_id and their respective points
+    for idx, (track_id, points) in enumerate(mapped_points.items()):
+        x, y = zip(*points)  # Unpack the x and y coordinates
+        plt.scatter(x, y, color=colors[idx % len(colors)], label=f'Player {track_id}')
+
+    plt.title('Mapped Player Positions on the Court')
+    plt.xlabel('Court X Coordinate')
+    plt.ylabel('Court Y Coordinate')
+    plt.gca().invert_yaxis()  # Invert y-axis to match court view
+    plt.legend()  # Show the player legend
+    plt.grid(True)  # Add a grid for better readability
+    plt.show() 
+    
+
 
 
 
 # main 1 - Before poseEstimation
-def create_layout(court_data):    
-    court_bounds = court_data.get('courtBounds')
+def create_layout(court_data):       
+    court_bounds = court_data.get('courtBounds') 
     match_id = court_data.get('match_id')
+    myMap = HeatMap(match_id)
     if not court_bounds or not match_id:
         print("Invalid data: 'courtBounds' or 'match_id' missing", file=sys.stderr)
-        sys.exit(1)
-    ordered_points = findPoints(court_bounds)
-    myMap = HeatMap()
-    myMap.setMapLayout(match_id, ordered_points)
-
-    width, height = get_heatmap_size(ordered_points)
-    print(f"Heatmap Size: Width = {width}, Height = {height}")
+        sys.exit(1) 
+    points = fourPoints(court_bounds)
+    
+    lengths = fourLengths(points)    
+    myMap.setMapLayout(match_id, points)
+    myMap.setCourtsize(match_id, lengths)
+    myMap.saveToFile()
+    
 
 # # main 2 - After poseEstimation
 def generate_map(datapath):
+    match_id = sys.argv[3]
+    players = sys.argv[4]    
+    myMap = HeatMap(match_id)
     try:
         # Open the file in binary mode
         with open(datapath, 'rb') as f:
-            data = f.read() 
-            print(f"Binary data length: {len(data)} bytes")
+            data = msgpack.unpack(f, raw=False)
+
     except Exception as e:
         print(f"Failed to load file: {e}", file=sys.stderr)
         sys.exit(1)
     print('Binary data loaded, generating heatmap...')
+    myMap.load_from_file()
+    points = myMap.getMapLayout(match_id)
+    lengths = myMap.getCourtsize(match_id)
+    matrix = homography(points)
+    mapMatrix = mapToCourt(data,matrix) 
+    plot_map(mapMatrix)   
+  
+if __name__ == "__main__": 
+    operation = sys.argv[1]
 
-
-if __name__ == "__main__":    
-    if len(sys.argv) < 2:
-        print("No operation specified. Use 'createLayout' or 'generateMap'.", file=sys.stderr)
-        sys.exit(1)
-
-    operation = sys.argv[1]  # Expecting 'createLayout' or 'generateMap'
-    
-    if operation == "createLayout":
-        # Read the JSON data from stdin
+    if operation == "createLayout":                
         try:
             input_data = sys.stdin.read()
             data = json.loads(input_data)
+            print(data)
         except json.JSONDecodeError as e:
             print(f"Failed to decode JSON: {e}", file=sys.stderr)
             sys.exit(1)
@@ -201,12 +273,9 @@ if __name__ == "__main__":
     
     elif operation == "generateMap":
         datapath = sys.argv[2]
+        
         generate_map(datapath)
 
     else:
         print(f"Unknown operation: {operation}", file=sys.stderr)
         sys.exit(1)
-
-    
-    
-

@@ -129,7 +129,7 @@ def processDetection(detection, frameTimestamp, frameData, frame):
         frameData.append({
             'track_id': int(track_id),
             'timestamp': frameTimestamp,
-            'keypoints': keypointData            
+            'keypoints': keypointData           
         })
 
 def extractKeypointData(kptArray, frame, track_id):

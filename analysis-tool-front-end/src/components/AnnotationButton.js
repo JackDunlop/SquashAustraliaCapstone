@@ -1,4 +1,5 @@
 import React from 'react';
+import { darkenColor } from '../utils/darkenColor';
 
 export default function AnnotationButton(props) {
   const {
@@ -90,14 +91,3 @@ const getPlayerColor = (label, match) => {
 
   return '';
 };
-
-function darkenColor(color) {
-  // Parse the color, darken it, and return it
-  let [r, g, b] = color.match(/\d+/g).map(Number);
-
-  r = Math.max(0, r - 25);
-  g = Math.max(0, g - 25);
-  b = Math.max(0, b - 25);
-
-  return `rgb(${r}, ${g}, ${b})`;
-}

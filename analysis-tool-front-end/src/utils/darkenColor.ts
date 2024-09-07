@@ -2,7 +2,7 @@ export function darkenColor(color: string) {
     // Parse the color, darken it, and return it
     const match = color.match(/\d+/g);
     if (!match) {
-        throw new Error("Invalid color format");
+        return;
     }
 
     let [r, g, b] = match.map(Number);

@@ -4,6 +4,7 @@ import { withRouter } from 'react-router-dom';
 import styles from './colorPicker.module.css';
 import { ChooseImageButton } from './ChooseImageButton';
 import { copyColorToClipboard } from '../utils/copyColorToClipboard';
+import { selectPlayerColor } from '../utils/selectPlayerColor';
 
 const axios = require('axios').default;
 
@@ -16,34 +17,6 @@ function ColourPick(props) {
   const [color1, setColor1] = useState('#006F3A');
   const [color2, setColor2] = useState('#EBC015');
   const [image, setImage] = useState(null);
-
-  //Create instance of an eye dropper to select player 1's colour.
-  async function openEyeDropper1() {
-    let eyeDropper = new window.EyeDropper();
-    const { sRGBHex } = await eyeDropper.open();
-    const hex = sRGBHex.replace(/^#/, '');
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    props.rgbArray[0].push(r);
-    props.rgbArray[0].push(g);
-    props.rgbArray[0].push(b);
-    setColor1(sRGBHex);
-  }
-
-  //Create instance of another eye dropper to select player 2's colour.
-  async function openEyeDropper2() {
-    let eyeDropper = new window.EyeDropper();
-    const { sRGBHex } = await eyeDropper.open();
-    const hex = sRGBHex.replace(/^#/, '');
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    props.rgbArray[1].push(r);
-    props.rgbArray[1].push(g);
-    props.rgbArray[1].push(b);
-    setColor2(sRGBHex);
-  }
 
   //Function used when selecting an image. It provides the selected image with a url, which can be used in a html file.
   const handleFileInput = (e) => {
@@ -72,7 +45,7 @@ function ColourPick(props) {
           <button
             type="button"
             className={styles.openPickerButton}
-            onClick={openEyeDropper1}
+            onClick={() => selectPlayerColor(0, setColor1, props.rgbArray)}
           >
             Open Eyedropper
           </button>
@@ -98,7 +71,7 @@ function ColourPick(props) {
           <button
             type="button"
             className={styles.openPickerButton}
-            onClick={openEyeDropper2}
+            onClick={() => selectPlayerColor(1, setColor2, props.rgbArray)}
           >
             Open Eyedropper
           </button>

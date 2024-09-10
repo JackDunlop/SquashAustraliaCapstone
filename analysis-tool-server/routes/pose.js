@@ -4,8 +4,7 @@ const poseController = require('../controllers/pose.controller');
 const handle = require('../validators/handle');
 const validate = require('../validators/validate');
 const { matchIdSchema } = require('../validators/match.schemas');
-const util = require('../lib/util');
-const {Match} = require('../models/Match')
+
 
 router.get('/:match_id', async (req, res) => {
     try {
@@ -50,7 +49,7 @@ router.get('/angles/:match_id', async (req, res) => {
     }
 });
 
-router.get('/:match_id/stream', async (req, res) => {
+router.post('/:match_id/stream', async (req, res) => {
     handle(
         validate.params(matchIdSchema)
       ),
@@ -59,40 +58,11 @@ router.get('/:match_id/stream', async (req, res) => {
 });
 
 // courtMap layout and size
-router.get('/createLayout/:match_id',
+router.get('/generateMap/:match_id',
     handle(
       validate.params(matchIdSchema)
     ),
-    poseController.createMapLayout
-    
+    poseController.createMapLayout  
 );
-
-router.get('/generateMap/:match_id', async (req, res) => {
-    try {
-        const match_id = req.params.match_id;
-        
-        const [result, err] = await util.handle(Match.findById(match_id));
-        if (err || !result) {
-            return res.status(400).json('Failed to get match.');
-        }
-        const players = result.players;
-        const playersJSON = JSON.stringify(players);
-        try {
-            jsonPath = await poseController.findDataFileMatchID(match_id);
-            if (!jsonPath) {
-                return res.status(400).json({ message: 'Data file not found' });
-            }
-        } catch (jsonPathError) {
-            console.error(`Error finding data file for match ${match_id}: ${jsonPathError.message}`);
-            return res.status(500).json({ message: 'Error finding data file', error: jsonPathError.message });
-        }      
-      
-        const runScript = poseController.runPythonScript(res, 'heatmap.py', ['generateMap', jsonPath, match_id, playersJSON]);
-    } catch (error) {
-        console.error(`Unexpected error: ${error.message}`);
-        res.status(500).json({ message: 'Unexpected error', error: error.message });
-    }
-});
-
 
 module.exports = router;

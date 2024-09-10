@@ -1,5 +1,5 @@
 import { React, useState, useEffect } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useHistory} from 'react-router-dom';
 
 const axios = require('axios').default;
 
@@ -7,6 +7,29 @@ export default function MainMenu(props) {
   const history = useHistory();
   const { baseUrl } = props;
   const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(false)
+  const [ready, setReady] = useState(false);  
+
+  const handleAnalyticsClick = async (matchId) => {
+    if (ready[matchId]) return;
+    else {
+      setLoading((prev) => ({ ...prev, [matchId]: true }));
+      try{ 
+        console.log(`Downloading PoseEstimation Data from URL: ${baseUrl}/pose/${matchId}`);      
+        const response = await axios.get(`${baseUrl}/pose/${matchId}`);        
+        if (response.status === 200) {
+          setReady(true)
+          console.log("Pose data fetched successfully");
+        } else {
+          console.error("Error fetching pose data:", response.status);
+        }        
+      } catch (error) {
+      console.error("Error handling analytics button:", error);
+      } finally {    
+      setLoading((prev) => ({ ...prev, [matchId]: false }));
+      }
+    }
+  };
 
   const removeMatch = (matchId) => {
     const confirmed = window.confirm(
@@ -92,11 +115,29 @@ export default function MainMenu(props) {
                         Edit
                       </button>
                     </a>
-                    <a href={'/analytics/' + match.id}>
-                    <button className="bg-purple-700 hover:bg-green-600 text-white font-bold py-2 px-4 mx-1">
-                        Analytics
-                      </button>
-                    </a>
+                    {ready ? (
+                    <Link to={`/analytics/${match.id}`}> 
+                      <div>
+                        <button
+                          className="bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 mx-1 rounded-lg">
+                          Analytics Ready
+                        </button>
+                        <video
+                          src={baseUrl + '/pose/' + match.id + '/stream'}
+                          muted
+                          preload="auto"                          
+                        ></video>
+                      </div>
+                    </Link>                      
+                  ) : (                      
+                    <button
+                      onClick={() => handleAnalyticsClick(match.id)}
+                      className={`bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 mx-1 rounded-lg ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={loading}
+                    >
+                      {loading ? 'Loading...' : 'Analytics'}
+                    </button>
+                  )}                    
                     <button
                       onClick={() => removeMatch(match.id)}
                       className="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 mx-1 rounded-lg"

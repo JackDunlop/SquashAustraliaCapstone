@@ -3,13 +3,12 @@ import sys
 import cv2
 import json
 import os
-import matplotlib.pyplot as plt
-import math
 import msgpack
+from poseEstimation import getMatchIDFromVideo, initialiseVideoCapture, getFrameTimestamp
+
 
 class HeatMap:    
-    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'courtData.json')
-    
+    #filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'courtData.json')
     def __init__(self,match_id): 
         self.maps = {}               
         if match_id is not None:
@@ -29,40 +28,8 @@ class HeatMap:
         self.maps[match_id]['CourtLengths'] = lengths
 
     def getCourtsize(self, match_id):         
-        return self.maps.get(match_id, {}).get('CourtLengths')        
-
-    def saveToFile(self):
-        try:
-            os.makedirs(os.path.dirname(HeatMap.filepath), exist_ok=True)            
-            if os.path.exists(HeatMap.filepath):
-                with open(HeatMap.filepath, 'r') as f:
-                    existing_data = json.load(f)
-            else:
-                existing_data = {}
-            
-            existing_data.update(self.maps)
-
-            with open(HeatMap.filepath, 'w') as f:
-                json.dump(existing_data, f, indent=4)
-            print(f"Data successfully saved to {HeatMap.filepath}")
-
-        except Exception as e:
-            print(f"Failed to save data: {e}")
-            
-    def load_from_file(self):
-        if os.path.exists(HeatMap.filepath):
-            try:                
-                with open(HeatMap.filepath, 'r') as f:
-                    loaded_data = json.load(f)
-                    for match_id, match_data in loaded_data.items():
-                        self.maps[match_id] = {
-                            'MapLayout': match_data.get('MapLayout'),
-                            'CourtLengths': match_data.get('CourtLengths')
-                        }                    
-            except Exception as e:
-                print(f"Failed to load data: {e}")
-        else:
-            print(f"No data file found at {HeatMap.filepath}")
+        return self.maps.get(match_id, {}).get('CourtLengths')
+     
 
 # Gets the size of each length of court in pixels 
 def fourLengths(court_coordinates):      
@@ -162,120 +129,133 @@ def mapToCourt(pose_estimation_data, homography_matrix):
     
     onlyDataToExtract = ['LEFT_ANKLE', 'RIGHT_ANKLE']
 
-    mapped_points = {}
-    
     for entry in pose_estimation_data:
         track_id = entry.get('track_id')  
         if not track_id:
-            continue  
-
-        mapListData = {}
+            continue 
+        if 'mapped_ankles' not in entry:
+            entry['mapped_ankles'] = {}       
         
         for keypoint in onlyDataToExtract:              
             if keypoint in entry['keypoints']:
-                keypointData = entry['keypoints'][keypoint]
-                mapListData[keypoint] = keypointData
-
-        # If both left and right ankle data is available
-        if 'LEFT_ANKLE' in mapListData and 'RIGHT_ANKLE' in mapListData:
-            left_ankle = mapListData['LEFT_ANKLE']
-            right_ankle = mapListData['RIGHT_ANKLE']
+                x, y = entry['keypoints'][keypoint]
             
-            player_position = np.array([
-                (left_ankle[0] + right_ankle[0]) / 2,  
-                (left_ankle[1] + right_ankle[1]) / 2,  
-                1  # Homogeneous coordinate
-            ]).reshape(-1, 1)
+            print(f'Original {keypoint} coordinates: x={x}, y={y}')
             
-            # Apply homography
-            mapped_position = np.dot(homography_matrix, player_position)            
-            mapped_position /= mapped_position[2, 0]  # Normalize
+            # Create homogeneous coordinates and apply homography
+            keypoint_position = np.array([x, y, 1]).reshape(-1, 1)
+            mapped_position = np.dot(homography_matrix, keypoint_position)
+            mapped_position /= mapped_position[2, 0]          
+            
+            print(f'Mapped {keypoint} coordinates: x={mapped_position[0, 0]}, y={mapped_position[1, 0]}')
 
-            if track_id not in mapped_points:
-                mapped_points[track_id] = []
-            mapped_points[track_id].append((mapped_position[0, 0], mapped_position[1, 0]))
+            # Store the transformed ankle keypoint
+            entry['mapped_ankles'][keypoint] = {
+                'x': mapped_position[0, 0],
+                'y': mapped_position[1, 0]
+            }
+    return pose_estimation_data
 
-    return mapped_points
-
-def plot_map(mapped_points):
-   # Define colors for different players
-    colors = ['red', 'blue', 'green', 'orange', 'purple']  
-
-    plt.figure(figsize=(8, 6))  # Set the figure size
-
-    # Iterate over each player's track_id and their respective points
-    for idx, (track_id, points) in enumerate(mapped_points.items()):
-        x, y = zip(*points)  # Unpack the x and y coordinates
-        plt.scatter(x, y, color=colors[idx % len(colors)], label=f'Player {track_id}')
-
-    plt.title('Mapped Player Positions on the Court')
-    plt.xlabel('Court X Coordinate')
-    plt.ylabel('Court Y Coordinate')
-    plt.gca().invert_yaxis()  # Invert y-axis to match court view
-    plt.legend()  # Show the player legend
-    plt.grid(True)  # Add a grid for better readability
-    plt.show() 
+def poseDisplay(videoPath,poseEstimationData):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
+    match_id = getMatchIDFromVideo(videoPath)
+    cap = initialiseVideoCapture(videoPath)
+    if not cap:
+        return None    
     
+    # Capture video properties
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+   
+    os.makedirs(output_dir, exist_ok=True)
+    filesave = os.path.join(output_dir, f'{match_id}.mp4')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
+    out = cv2.VideoWriter(filesave,fourcc, fps, (frame_width, frame_height))
+    frameData = []  
+    
+    for entry in poseEstimationData:
+        if isinstance(entry['timestamp'], str) and 's' in entry['timestamp']:
+            entry['timestamp'] = float(entry['timestamp'].replace('s', ''))
 
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break 
 
+        timestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0     
+        for entry in poseEstimationData:           
+            if np.isclose(float(entry['timestamp']), float(timestamp), atol=0.05):
+                keypoints = entry.get('keypoints')
+                if keypoints:
+                    for keypoint_name, keypoint_coords in keypoints.items():
+                        x_kp, y_kp = int(keypoint_coords[0]), int(keypoint_coords[1])
+                        cv2.circle(frame, (x_kp, y_kp), 3, (0, 0, 255), -1)  # Red circle for original keypoints
+                        cv2.putText(frame, keypoint_name, (x_kp, y_kp - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
+                mapped_ankles = entry.get('mapped_ankles')
+                if mapped_ankles:
+                    for ankle_name, mapped_coords in mapped_ankles.items():
+                        x_ankle, y_ankle = int(mapped_coords['x']), int(mapped_coords['y'])                        
+                        
+                        print(f'Mapped {ankle_name} coordinates: x={x_ankle}, y={y_ankle}')                        
+                        # Check if the coordinates are within frame bounds
+                        if 0 <= x_ankle < frame_width and 0 <= y_ankle < frame_height:
+                            cv2.circle(frame, (x_ankle, y_ankle), 5, (0, 255, 0), -1)  # green circle
+                        else:
+                            print(f'{ankle_name} coordinates out of bounds: x={x_ankle}, y={y_ankle}')
+        out.write(frame)
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
+    print(f'Video saved at: {filesave}')
+ 
+_map_storage = {}
 
-# main 1 - Before poseEstimation
-def create_layout(court_data):       
-    court_bounds = court_data.get('courtBounds') 
-    match_id = court_data.get('match_id')
-    myMap = HeatMap(match_id)
-    if not court_bounds or not match_id:
+def set_map_instance(match_id, instance):    
+    if instance:
+        _map_storage[match_id] = instance
+
+def get_map_instance(match_id):
+    instance = _map_storage.get(match_id, None)
+    if instance is None:
+        print(f"Error: HeatMap instance for match_id {match_id} not found.")
+    return instance
+
+def main(): 
+    courtdataPath = sys.argv[1]
+    posedataPath = sys.argv[2]
+    videoPath = sys.argv[3]    
+    try:
+        courtBounds = json.loads(sys.stdin.read())  # Read courtBounds from stdin and parse as JSON
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON from stdin: {e}")
+        sys.exit(1)
+    
+    match_id = getMatchIDFromVideo(videoPath)
+    
+    myMap = HeatMap(match_id)   
+    
+    if not courtBounds or not match_id:
         print("Invalid data: 'courtBounds' or 'match_id' missing", file=sys.stderr)
-        sys.exit(1) 
-    points = fourPoints(court_bounds)
-    
-    lengths = fourLengths(points)    
-    myMap.setMapLayout(match_id, points)
+        return False
+    points = fourPoints(courtBounds)    
+    lengths = fourLengths(points)     
+    myMap.setMapLayout(match_id, points)    
     myMap.setCourtsize(match_id, lengths)
-    myMap.saveToFile()
-    
-
-# # main 2 - After poseEstimation
-def generate_map(datapath):
-    match_id = sys.argv[3]
-    players = sys.argv[4]    
-    myMap = HeatMap(match_id)
     try:
         # Open the file in binary mode
-        with open(datapath, 'rb') as f:
+        with open(posedataPath, 'rb') as f:
             data = msgpack.unpack(f, raw=False)
 
     except Exception as e:
         print(f"Failed to load file: {e}", file=sys.stderr)
         sys.exit(1)
-    print('Binary data loaded, generating heatmap...')
-    myMap.load_from_file()
-    points = myMap.getMapLayout(match_id)
-    lengths = myMap.getCourtsize(match_id)
     matrix = homography(points)
-    mapMatrix = mapToCourt(data,matrix) 
-    plot_map(mapMatrix)   
-  
-if __name__ == "__main__": 
-    operation = sys.argv[1]
+    mapMatrix = mapToCourt(data,matrix)
 
-    if operation == "createLayout":                
-        try:
-            input_data = sys.stdin.read()
-            data = json.loads(input_data)
-            print(data)
-        except json.JSONDecodeError as e:
-            print(f"Failed to decode JSON: {e}", file=sys.stderr)
-            sys.exit(1)
+    #poseDisplay(videoPath,mapMatrix)
 
-        create_layout(data)
-    
-    elif operation == "generateMap":
-        datapath = sys.argv[2]
-        
-        generate_map(datapath)
-
-    else:
-        print(f"Unknown operation: {operation}", file=sys.stderr)
-        sys.exit(1)
+if __name__ == "__main__":    
+    main() 

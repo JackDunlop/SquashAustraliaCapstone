@@ -13,7 +13,7 @@ def extractFirstFrame(videoPath):
     if ret:
         match_id = getMatchIDFromVideo(videoPath)
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        output_dir = os.path.join(script_dir, '..', '..', 'firstFrameExtracts')
+        output_dir = os.path.join(script_dir, '..', '../analysis-tool-server', 'firstFrameExtracts')
         os.makedirs(output_dir, exist_ok=True)
         filesave = os.path.join(output_dir, f'{match_id}.jpg')
         cv2.imwrite(filesave, frame)

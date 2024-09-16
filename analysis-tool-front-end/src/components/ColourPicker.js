@@ -1,43 +1,72 @@
-import React from 'react';
-import { useState } from 'react';
-import { withRouter } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './colorPicker.module.css';
-import { ChooseImageButton } from './ChooseImageButton';
 import { copyColorToClipboard } from '../utils/copyColorToClipboard';
 import { selectPlayerColor } from '../utils/selectPlayerColor';
-
+import { withRouter } from 'react-router-dom';
 const axios = require('axios').default;
-
-/*
-This file allows for the creation of a colourpicker in a html application, using style from colorPicker.module.css.
-*/
+const baseURL = "http://localhost:3001/";
 
 function ColourPick(props) {
-  //Set initial colours for our two players, before eyedroppers are used.
   const [color1, setColor1] = useState('#006F3A');
   const [color2, setColor2] = useState('#EBC015');
   const [image, setImage] = useState(null);
+  const canvasRef = useRef(null);
 
-  //Function used when selecting an image. It provides the selected image with a url, which can be used in a html file.
-  const handleFileInput = (e) => {
-    setImage(URL.createObjectURL(e.target.files[0]));
-  };
+  console.log("PROPS ->", props.imagepath); 
 
-  // The below returned code reders the html which will be displayed, using the functions defined above.
+  useEffect(() => {
+    const loadImageToCanvas = async () => {
+      if (!props.imagepath) {
+        console.error("imagepath is not defined");
+        return;
+      }
+
+      console.log("Imagepath:", props.imagepath);
+      const fileName = props.imagepath.split('\\').pop();
+      try {
+        const response = await fetch(`${baseURL}video/${fileName}/firstFrame`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const blob = await response.blob();
+        const imageURL = URL.createObjectURL(blob);
+
+        const image = new Image();
+        image.src = imageURL;
+
+        image.onload = () => {
+          const context = canvasRef.current.getContext('2d');
+          context.clearRect(0, 0, props.width, props.height);
+          context.drawImage(image, 0, 0, props.width, props.height);
+          URL.revokeObjectURL(imageURL);
+        };
+
+        image.onerror = (error) => {
+          console.error('Failed to load image:', error);
+        };
+      } catch (error) {
+        console.error('Error fetching first frame:', error);
+      }
+    };
+
+    if (props.imagepath) {
+      loadImageToCanvas();
+    }
+  }, [props.imagepath]);
+
   return (
     <>
-      <h1 class={styles.bigHeadererFile}>
+      <h1 className={styles.bigHeadererFile}>
         <b>Player Selection</b>
       </h1>
-      <div class={styles.ImageSelection}>
+      <div className={styles.ImageSelection}>
         <h5>
           <b>Choose Image By Selecting Below Text:</b>
         </h5>
-        <div className={styles.formSectionImage}>
-          <ChooseImageButton onFileInput={handleFileInput} />
-        </div>
+        <div className={styles.formSectionImage}></div>
       </div>
-      <div class={styles.Player1Selection}>
+      <div className={styles.Player1Selection}>
         <div className={styles.formSectionText}>
           <h5>
             <b>Pick Player 1 Colour:</b>
@@ -52,7 +81,6 @@ function ColourPick(props) {
         </div>
 
         <div className={styles.formSectionText}>
-          {/* <p>3. View selected</p> */}
           <button
             type="button"
             className={styles.selectedColor}
@@ -63,7 +91,7 @@ function ColourPick(props) {
           </button>
         </div>
       </div>
-      <div class={styles.Player2Selection}>
+      <div className={styles.Player2Selection}>
         <div className={styles.formSectionText}>
           <h5>
             <b>Pick Player 2 Colour:</b>
@@ -78,7 +106,6 @@ function ColourPick(props) {
         </div>
 
         <div className={styles.formSectionText}>
-          {/* <p>3. View selected</p> */}
           <button
             type="button"
             className={styles.selectedColor}
@@ -90,7 +117,7 @@ function ColourPick(props) {
         </div>
       </div>
 
-      <div class={styles.absoluteDiv4}>
+      <div className={styles.absoluteDiv4}>
         <div className={styles.rightColumn}>
           {image ? (
             <>
@@ -102,25 +129,13 @@ function ColourPick(props) {
               />
             </>
           ) : (
-            <svg
-              stroke="currentColor"
-              fill="currentColor"
-              strokeWidth="0"
-              viewBox="0 0 16 16"
-              height="4em"
-              width="4em"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707v5.586l-2.73-2.73a1 1 0 0 0-1.52.127l-1.889 2.644-1.769-1.062a1 1 0 0 0-1.222.15L2 12.292V2a2 2 0 0 1 2-2zm5.5 1.5v2a1 1 0 0 0 1 1h2l-3-3zm-1.498 4a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0z"></path>
-              <path d="M10.564 8.27 14 11.708V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-.293l3.578-3.577 2.56 1.536 2.426-3.395z"></path>
-            </svg>
+            <canvas ref={canvasRef} width={1280} height={720}></canvas>
           )}
         </div>
       </div>
     </>
   );
 }
-
 class ColourPicker extends React.Component {
   constructor(props) {
     super(props);
@@ -128,6 +143,7 @@ class ColourPicker extends React.Component {
       value: this.props.location.state,
       RGBArray: [[], []],
     };
+  
   }
 
   formValidation = () => {
@@ -137,6 +153,7 @@ class ColourPicker extends React.Component {
     }
     return error;
   };
+
   handleSubmit = (event) => {
     let form_error = this.formValidation();
     event.preventDefault();
@@ -173,6 +190,7 @@ class ColourPicker extends React.Component {
         );
     }
   };
+
   render() {
     return (
       <>
@@ -183,10 +201,15 @@ class ColourPicker extends React.Component {
         </head>
 
         <body>
-          <div class={styles.relativeDiv}>
+          <div className={styles.relativeDiv}>
             <form onSubmit={this.handleSubmit}>
-              <ColourPick rgbArray={this.state.RGBArray}></ColourPick>
-              <div type="submit" class={styles.ProcessDiv}>
+              <ColourPick
+                rgbArray={this.state.RGBArray}
+                imagepath={this.state.value.imagepath}  
+                width={1280}
+                height={720}
+              />
+              <div type="submit" className={styles.ProcessDiv}>
                 <button className={styles.NextButtonColour}>Process</button>
               </div>
             </form>
@@ -196,5 +219,7 @@ class ColourPicker extends React.Component {
     );
   }
 }
+
+
 
 export default withRouter(ColourPicker);

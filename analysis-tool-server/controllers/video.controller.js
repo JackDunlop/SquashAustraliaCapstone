@@ -5,7 +5,7 @@ const videoFileFormats = ['mp4', 'mov', 'avi'];
 const { spawn } = require('child_process');
 const fsExtra = require('fs-extra');
 
-
+const baseURL = "http://localhost:3001/"
 // upload video
 const upload = async (req, res, next) => {
   if (req.files && req.files.video) {
@@ -88,7 +88,6 @@ const extractFirstFrame = async (req, res, next) => {
           path.join(
             `${__dirname}../../tempstorage/${req.params.filename}`
           );
-        console.log(_path);
 
         if (fs.existsSync(_path)) return _path;
       }
@@ -117,7 +116,13 @@ const extractFirstFrame = async (req, res, next) => {
       }
 
       if (code === 0) {
-        res.status(200).json({ message: 'Finished' });
+    
+        const videoname = req.params.filename;
+        const imagename = videoname.split('.')[0];
+        const imagepath = path.join(__dirname, '../firstFrameExtracts', `${imagename}.jpg`);
+        res.setHeader('Content-Type', 'image/jpeg');
+        const readStream = fs.createReadStream(imagepath);
+        readStream.pipe(res);
       } else {
         res.status(500).json({ message: 'Process failed', code: code, error: stderrData });
       }
@@ -143,13 +148,13 @@ const uploadTemp = async (req, res, next) => {
       fs.mkdirSync(path.join(`${__dirname}../../tempstorage`), { recursive: true });
     }
     const [result, err] = await util.handleFileUpload(req.files.video, tempVideoPath);
-    if (err) return res.status(400).json(err.message);
     res.status(200).json({
       message: 'Video uploaded successfully',
-      videoName: path.basename(tempVideoPath),
+      videoName: tempVideoPath,
     });
-  } else {
-    res.status(400).json('No video file provided.');
+  } 
+  else {
+    res.status(400).json('No video file provided.',);
   }
 };
 

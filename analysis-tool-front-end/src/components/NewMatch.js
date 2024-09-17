@@ -3,7 +3,7 @@ import { withRouter } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUpload } from '@fortawesome/free-solid-svg-icons';
 
-//const axios = require('axios').default;
+const axios = require('axios').default;
 
 class NewMatch extends React.Component {
   constructor(props) {
@@ -30,6 +30,7 @@ class NewMatch extends React.Component {
 
       titleError: '',
       durationError: '',
+      imagepath: '',
     };
     this.handleChange = this.handleChange.bind(this);
   }
@@ -173,7 +174,7 @@ class NewMatch extends React.Component {
     return error;
   };
 
-  handleSubmit = (event) => {
+  handleSubmit = async (event) => {
     this.setState({
       player1FNameError: '',
       player1LNameError: '',
@@ -198,26 +199,46 @@ class NewMatch extends React.Component {
     const duration = this.convertHMToSeconds(
       this.state.hours,
       this.state.minutes,
-      this.state.seconds,
+      this.state.seconds
     );
     const description = this.state.description;
 
     let form_error = this.formValidation();
     if (!form_error) {
-      this.props.history.push({
-        pathname: '/new/court',
-        state: {
-          from: this.props.location.pathname,
-          player: players,
-          title: title,
-          duration: duration,
-          description: description,
-          video: this.state.selectedFile,
-        },
-      })
+      const formData = new FormData();
+      formData.append('video', this.state.selectedFile);
+
+      try {
+        const response = await axios.post('http://localhost:3001/video/uploadTemp', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        // Set the imagepath state from the response
+        this.setState({ imagepath: response.data.videoName });
+
+        this.props.history.push({
+          pathname: '/new/court',
+          state: {
+            from: this.props.location.pathname,
+            player: players,
+            title: title,
+            duration: duration,
+            description: description,
+            video: this.state.selectedFile,  
+            imagepath: response.data.videoName,  
+          },
+        });
+      } catch (error) {
+        console.error('Error uploading video:', error);
+      }
     }
   };
 
+  convertHMToSeconds = (numHours, numMinutes, numSeconds) => {
+    return numHours * 60 * 60 + numMinutes * 60 + numSeconds;
+  };
   convertHMToSeconds = (numHours, numMinutes, numSeconds) => {
     return numHours * 60 * 60 + numMinutes * 60 + numSeconds;
   };

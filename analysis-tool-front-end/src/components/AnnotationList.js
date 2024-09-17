@@ -3,7 +3,7 @@ import Modal from './Modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
-import { Player } from 'video-react';
+import { convertSecondsToMilliseconds } from '../utils/convertSecondsToMilliseconds';
 
 export default function AnnotationList({
   baseUrl,
@@ -299,19 +299,6 @@ export default function AnnotationList({
 
   const removeAnnotation = (annotation) => {
     setAnnotationToRemove(annotation);
-  };
-
-  const convertSecondsToMS = (numSeconds) => {
-    numSeconds = Number(numSeconds);
-    const hours = Math.floor(numSeconds / 3600);
-    const minutes = Math.floor((numSeconds % 3600) / 60);
-    const seconds = Math.floor((numSeconds % 3600) % 60);
-    const hoursDisplay = hours > 0 ? (hours >= 10 ? hours : '0' + hours) : '00';
-    const minutesDisplay =
-      minutes > 0 ? (minutes >= 10 ? minutes : '0' + minutes) : '00';
-    const secondsDisplay =
-      seconds > 0 ? (seconds >= 10 ? seconds : '0' + seconds) : '00';
-    return hoursDisplay + ':' + minutesDisplay + ':' + secondsDisplay;
   };
 
   const Filter = () => (
@@ -686,7 +673,7 @@ export default function AnnotationList({
                           )
                         }
                       >
-                        {convertSecondsToMS(annotation.timestamp)}
+                        {convertSecondsToMilliseconds(annotation.timestamp)}
                       </button>
                     </td>
                     <td>{gameZoneLabels[annotation.playerPos - 1]}</td>

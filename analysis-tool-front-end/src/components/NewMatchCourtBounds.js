@@ -88,17 +88,44 @@ const PositionMarker = ({ label, positionId, onMarkPosition }) => {
     );
   }; 
 
-function Canvas(props) {
-  const canvasRef = useRef(null);
-  const coordRef = useRef(0);
-
-  const image = new Image();
-
-  image.onload = () => {
-    canvasRef.current
-      .getContext('2d')
-      .drawImage(image, 0, 0, props.width, props.height);
-  };
+  function Canvas(props) {
+    const canvasRef = useRef(null);
+    const coordRef = useRef(0);
+  
+    useEffect(() => {
+      const loadImageToCanvas = async () => {
+        const fileName = props.imagepath.split('\\').pop(); 
+        try {
+          const response = await fetch(`${baseURL}video/${fileName}/firstFrame`);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+  
+          const blob = await response.blob();
+          const imageURL = URL.createObjectURL(blob);
+  
+          const image = new Image();
+          image.src = imageURL;
+  
+          image.onload = () => {
+            const context = canvasRef.current.getContext('2d');
+            context.clearRect(0, 0, props.width, props.height);
+            context.drawImage(image, 0, 0, props.width, props.height);
+            URL.revokeObjectURL(imageURL); 
+          };
+  
+          image.onerror = (error) => {
+            console.error('Failed to load image:', error);
+          };
+        } catch (error) {
+          console.error('Error fetching first frame:', error);
+        }
+      };
+  
+      if (props.imagepath) {
+        loadImageToCanvas();
+      }
+    }, [props.imagepath]); 
 
   const markPosition = (positionId) => {
     const confirm = document.getElementById(positionId).getContext('2d');
@@ -108,9 +135,6 @@ function Canvas(props) {
     coordRef.current = positions[positionId].id || 0;
   };
 
-  const handleFileInput = (event) => {
-    image.src = URL.createObjectURL(event.target.files[0]);
-  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -231,7 +255,6 @@ function Canvas(props) {
         }}
       >
         <div style={{ marginBottom: 36 }}>
-          <ChooseImageButton onFileInput={handleFileInput} />
         </div>
         <div
           style={{
@@ -323,7 +346,9 @@ class CourtBounds extends React.Component {
             duration: this.state.value.duration,
             description: this.state.value.description,
             video: this.state.value.video,
+            imagepath: this.state.value.imagepath, 
             court_Bounds: this.state.courtBounds,
+
           },
         });     
     }
@@ -337,6 +362,7 @@ class CourtBounds extends React.Component {
             height={720}
             court_bounds={this.state.courtBounds}
             onNextStep={this.handleSubmit}
+            imagepath={this.state.value.imagepath}
           ></Canvas>
         </section>
       </section>

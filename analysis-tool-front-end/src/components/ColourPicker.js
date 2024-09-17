@@ -3,9 +3,7 @@ import styles from './colorPicker.module.css';
 import { copyColorToClipboard } from '../utils/copyColorToClipboard';
 import { selectPlayerColor } from '../utils/selectPlayerColor';
 import { withRouter } from 'react-router-dom';
-const fsExtra = require('fs-extra');
 const axios = require('axios').default;
-const path = require('path');
 const baseURL = "http://localhost:3001/";
 
 function ColourPick(props) {

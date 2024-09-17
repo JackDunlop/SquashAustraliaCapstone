@@ -50,11 +50,10 @@ router.get('/angles/:match_id', async (req, res) => {
 });
 
 router.get('/:match_id/stream', async (req, res) => {    
-    const matchId = req.params.match_id   
-    console.log("get",matchId) 
+    const matchId = req.params.match_id       
     if (!matchId){
         return res.status(400).json({message: "no Match ID"})
-    }
+    }    
     await poseController.stream(req,res)
        
 });

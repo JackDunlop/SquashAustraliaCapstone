@@ -22,45 +22,42 @@ export default function ViewAnalytics({ baseUrl }) {
   const playerRef = useRef(null);  // Reference to the Player component
   const [videoUrl, setVideoUrl] = useState(null);
   const [error, setError] = useState(null); // State to handle errors
-  const [isReady, setIsReady] = useState(false);    
-  const [canPlay, setCanPlay] = useState(false);
+  const [isReady, setIsReady] = useState(false);   
+  
 
-  useEffect(() => {
-    const fetchVideoStream = async () => {
-      try {
-        // Call the backend to generate the map (if necessary)
-        console.log(`Generating map: ${baseUrl}/pose/generateMap/${matchId}`);
-        const respGenMap = await axios.get(`${baseUrl}/pose/generateMap/${matchId}`);
-
-        if (respGenMap.status === 200) {
-          console.log("Map Request Successful");
-
-          // Set the video URL for streaming
-          const streamUrl = `${baseUrl}/pose/${matchId}/stream`;
-          setVideoUrl(streamUrl);
-          setLoading(false); // Mark loading as complete
-        } else {
-          setError('Error generating map. Please try again later.');
-        }
-      } catch (error) {
-        console.error('Error during fetch:', error);
-        setError('An error occurred while loading data. Please try again later.');
-        setLoading(false); // Set loading to false in case of an error
+  useEffect(() => { 
+  const fetchVideoStream = async () => {           
+    try {
+       // 1. Generate Map
+       console.log(`Generating map: ${baseUrl}/pose/generateMap/${matchId}`); 
+       const respGenMap = await axios.get(`${baseUrl}/pose/generateMap/${matchId}`);      
+      if (respGenMap.status === 200) {
+        console.log("Map Request Successful"); 
+        // 2. Stream
+        console.log(`calling stream: ${baseUrl}/video/${matchId}/stream`)
+        const stream = `${baseUrl}/pose/${matchId}/stream`; 
+        setVideoUrl(stream);
+        setIsReady(true); // Video URL is ready to be played
+      } else {
+        console.log('Gen map error:', respGenMap.status);
+        setError('Error generating map. Please try again later.');
       }
-    }; 
+    } catch (error) {
+      console.error('Error during fetch:', error);
+      setError('An error occurred while loading data. Please try again later.');        
+    } finally {
+      setLoading(false); // Ensure loading state is set to false in all cases      
+    }
+  }; 
 
   fetchVideoStream();
-},[matchId]);
+}, []);
   
  // Handle play button press
  const handlePlayButton = () => {
   if (playerRef.current && isReady) {
     playerRef.current.video.play(); // Start playing the video
   }
-};
-const handleCanPlay = () => {
-  console.log("Video is ready to play.");
-  setCanPlay(true); // Enable play button
 };
 return (
   <div className="relative w-full h-desktop">
@@ -83,7 +80,7 @@ return (
         height="100%"
         src={videoUrl}
         onReady={() => setLoading(false)}
-          onCanPlay={handleCanPlay}  // Fires when the video can start playing
+           // Fires when the video can start playing
           onError={(e) => {
             console.error("Error loading video", e.target.error);
           }}

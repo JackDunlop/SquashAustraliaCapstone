@@ -113,20 +113,13 @@ export default function MainMenu(props) {
                         Edit
                       </button>
                     </a>
-                    {streamReady[match.id] && poseReady[match.id] ? (
+                    {poseReady[match.id] ? (
   <Link to={`/analytics/${match.id}`}>
     <div>
       <button
         className="bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 mx-1 rounded-lg">
         Analytics Ready
-      </button>
-      <video
-        src={baseUrl + '/pose/' + match.id + '/stream'}  // Pose video stream
-        muted
-        preload="none"
-        controls
-        onError={(e) => console.error(`Error loading pose video for match ${match.id}:`, e.target.error)}
-      ></video>
+      </button>      
     </div>
   </Link>
 ) : (

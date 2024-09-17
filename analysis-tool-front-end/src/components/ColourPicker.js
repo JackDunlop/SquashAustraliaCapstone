@@ -14,6 +14,10 @@ function ColourPick(props) {
   const [image, setImage] = useState(null);
   const canvasRef = useRef(null);
 
+// TEMP USE INSTEAD OF PLAYER ONE AND PLAYER TWO
+  useEffect(() => {
+    console.log("Players array:", props.players);
+  }, []);
 
 
   const videopath =  props.imagepath;
@@ -247,6 +251,7 @@ class ColourPicker extends React.Component {
                 imagepath={this.state.value.imagepath}  
                 width={1280}
                 height={720}
+                players={this.state.value.player} 
               />
               <div type="submit" className={styles.ProcessDiv}>
                 <button className={styles.NextButtonColour}>Process</button>

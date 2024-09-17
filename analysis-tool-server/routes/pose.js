@@ -9,6 +9,10 @@ const { matchIdSchema } = require('../validators/match.schemas');
 router.get('/:match_id', async (req, res) => {
     try {
         const match_id = req.params.match_id;
+        const dataFilePath = await poseController.findDataFileMatchID(match_id);
+        if (dataFilePath){
+            return res.status(200).json({message: `Data Already stored for ${match_id}`})
+        }
         const videoFilePath = await poseController.findVideoFileMatchID(match_id);
         if (!videoFilePath) {
             return res.status(400).json({ message: 'Video file not found' });

@@ -106,14 +106,14 @@ const extractFirstFrame = async (req, res, next) => {
     });
     pythonProcess.on('close', async (code) => {
       console.log(`child process exited with code ${code}`);
-      try {
-        await fsExtra.emptyDir(path.join(
-          `${__dirname}../../tempstorage`
-        ));
+      // try {
+      //   await fsExtra.emptyDir(path.join(
+      //     `${__dirname}../../tempstorage`
+      //   ));
 
-      } catch (err) {
-        res.status(500).json({ message: 'Error', code: code, error: err });
-      }
+      // } catch (err) {
+      //   res.status(500).json({ message: 'Error', code: code, error: err });
+      // }
 
       if (code === 0) {
     

@@ -85,7 +85,6 @@ def readFrameWithTwoBBoxes(videoPath, model, classes, confThresh):
 class Clustering:
     def __init__(self, modelPath):
         if not os.path.exists(modelPath):
-            # Download the model quietly
             import subprocess
             subprocess.run(['python', '-m', 'ultralytics', 'download', '--model', 'yolov8n.pt'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.model = YOLO(modelPath)

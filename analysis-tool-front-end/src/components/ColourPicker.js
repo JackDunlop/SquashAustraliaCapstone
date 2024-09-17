@@ -9,11 +9,50 @@ const baseURL = "http://localhost:3001/";
 function ColourPick(props) {
   const [color1, setColor1] = useState('#006F3A');
   const [color2, setColor2] = useState('#EBC015');
+  const [playerOneColourRGB, setPlayerOneColourRGB] = useState([]);
+  const [playerTwoColourRGB, setPlayerTwoColourRGB] = useState([]);
   const [image, setImage] = useState(null);
   const canvasRef = useRef(null);
 
-  console.log("PROPS ->", props.imagepath); 
+// TEMP USE INSTEAD OF PLAYER ONE AND PLAYER TWO
+  useEffect(() => {
+    console.log("Players array:", props.players);
+  }, []);
 
+
+  const videopath =  props.imagepath;
+  const videoNameWithExtension = videopath.split('\\').pop(); 
+  const videoName = videoNameWithExtension.split('.')[0];
+  useEffect(() => {
+    if (videoName) {
+      axios.get(`${baseURL}colour/players/${videoName}`)
+        .then(response => {
+          setPlayerOneColourRGB(response.data.PlayerOne);
+          setPlayerTwoColourRGB(response.data.PlayerTwo);
+        })
+        .catch(error => {
+          console.error('Error occurred while fetching player data:', error);
+        });
+    }
+  }, [videoName]);
+  
+  function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+  }
+  
+  useEffect(() => {
+    if (playerOneColourRGB.length > 0 && playerTwoColourRGB.length > 0) {
+      setColor1(rgbToHex(...playerOneColourRGB));
+      setColor2(rgbToHex(...playerTwoColourRGB));
+    }
+  }, [playerOneColourRGB, playerTwoColourRGB]);
+
+  const swapColors = () => {
+    const temp = color1;
+    setColor1(color2);
+    setColor2(temp);
+  };
+  
   useEffect(() => {
     const loadImageToCanvas = async () => {
       if (!props.imagepath) {
@@ -57,6 +96,7 @@ function ColourPick(props) {
 
   return (
     <>
+     <button type="button" onClick={swapColors}>Swap Colors</button>
       <h1 className={styles.bigHeadererFile}>
         <b>Player Selection</b>
       </h1>
@@ -166,6 +206,8 @@ class ColourPicker extends React.Component {
     const playerRGB = this.state.RGBArray;
     const formData = new FormData();
     formData.append('video', video);
+    
+   // fsExtra.emptyDir(path.join(`${__dirname}../../tempstorage`)); need to do in here somewhere
     if (!form_error) {
       axios
         .post(this.props.baseUrl + '/match/new', {
@@ -201,6 +243,7 @@ class ColourPicker extends React.Component {
         </head>
 
         <body>
+       
           <div className={styles.relativeDiv}>
             <form onSubmit={this.handleSubmit}>
               <ColourPick
@@ -208,6 +251,7 @@ class ColourPicker extends React.Component {
                 imagepath={this.state.value.imagepath}  
                 width={1280}
                 height={720}
+                players={this.state.value.player} 
               />
               <div type="submit" className={styles.ProcessDiv}>
                 <button className={styles.NextButtonColour}>Process</button>

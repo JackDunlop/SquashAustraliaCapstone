@@ -45,10 +45,9 @@ def process_video(videoPath):
     if not cap:
         return None 
     frameData = videoWriter(cap, videoPath, model, confThresh, modelClass)        
-    cap.release()
-    store_data = store_pose_estimation_data(frameData,videoPath)
+    cap.release()   
      
-    return store_data
+    return frameData
 
 def store_pose_estimation_data(frameData, videoPath):
     match_id = getMatchIDFromVideo(videoPath)    
@@ -192,6 +191,9 @@ def main():
     
     frameData = process_video(videoPath)    
     
+    store_data = store_pose_estimation_data(frameData,videoPath)
+    
+
     
 if __name__ == "__main__":
     main()

@@ -80,47 +80,54 @@ const upload = async (req, res, next) => {
     res.status(400).json('No video file provided.');
   }
 };
-// stream video
-const stream = async (req, res, next) => {  
-  // ensure there is a range given for the video
+const stream = async (req, res, next) => {
   const range = req.headers.range;
-  if (!range) {
-    res.status(400).send('Requires Range header');    
-  }  
-  // Find video in output folder
-  const findVideoFile = async () => {
-    for (let videoFileFormat of videoFileFormats) {
-      let _path = path.join(`${__dirname}../../poseOutputVideo/${req.params.match_id}.${videoFileFormat}`);
-      //console.log(_path)      
-      // ensure that the video file exists
-      if (fs.existsSync(_path)) return _path;
+  
+  // If the request method is HEAD, respond with just the headers
+  if (req.method === 'HEAD') {
+    
+    const videoFilePath = path.join(__dirname, '../poseOutputVideo', `${req.params.match_id}.mp4`);    
+    console.log(videoFilePath)
+    if (!fs.existsSync(videoFilePath)) {
+      return res.status(404).send('Video not found');
     }
-    return '';
-  }
-  const videoFilePath = await findVideoFile();
-  if (videoFilePath !== '') {
+
     const videoSize = fs.statSync(videoFilePath).size;
-    // parse range
-    const CHUNK_SIZE = 10 ** 6; // 1MB
-    const start = Number(range.replace(/\D/g, ''));
-    const end = Math.min(start + CHUNK_SIZE, videoSize - 1);
-
-    const contentLength = end - start + 1;
-    const headers = {
-      'Content-Range': `bytes ${start}-${end}/${videoSize}`,
-      'Accept-Ranges': 'bytes',
-      'Content-Length': contentLength,
+    res.writeHead(200, {
+      'Content-Length': videoSize,
       'Content-Type': 'video/mp4',
-    };
-
-    res.writeHead(206, headers);
-
-    const videoStream = fs.createReadStream(videoFilePath, { start, end });
-
-    videoStream.pipe(res);
-  } else {
-    res.status(404).json('');
+      'Accept-Ranges': 'bytes',
+    });
+    return res.end();  // End the response without streaming content
   }
+
+  // For GET requests, continue with streaming logic
+  if (!range) {
+    return res.status(400).send('Requires Range header');
+  }
+
+  const videoFilePath = path.join(__dirname, '../poseOutputVideo', `${req.params.match_id}.mp4`);
+  
+  if (!fs.existsSync(videoFilePath)) {
+    return res.status(404).send('Video not found');
+  }
+
+  const videoSize = fs.statSync(videoFilePath).size;
+  const CHUNK_SIZE = 10 ** 6; // 1MB chunk size
+  const start = Number(range.replace(/\D/g, ''));
+  const end = Math.min(start + CHUNK_SIZE, videoSize - 1);
+  const contentLength = end - start + 1;
+
+  const headers = {
+    'Content-Range': `bytes ${start}-${end}/${videoSize}`,
+    'Accept-Ranges': 'bytes',
+    'Content-Length': contentLength,
+    'Content-Type': 'video/mp4',
+  };
+
+  res.writeHead(206, headers); // HTTP 206 for partial content
+  const videoStream = fs.createReadStream(videoFilePath, { start, end });
+  videoStream.pipe(res);
 };
 
 // Send courtBounds to heatmap.py

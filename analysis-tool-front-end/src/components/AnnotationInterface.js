@@ -86,6 +86,7 @@ export default function AnnotationInterface({ baseUrl }) {
   return (
     <>
       <div className="grid grid-cols-16 h-full mx-3 mt-1">
+        {/* Sidebar with Annotation List */}
         <div className="col-span-3 mr-3 h-desktop">
           <AnnotationList
             baseUrl={baseUrl}
@@ -97,35 +98,39 @@ export default function AnnotationInterface({ baseUrl }) {
             pauseVideo={pauseVideo}
           />
         </div>
-        <div className="col-span-13 h-desktop relative mr-12">
-          <AnnotationVideo
-            videoUrl={videoUrl}
-            videoPaused={videoPaused}
-            seekTime={seekTime}
-            seekTimeChanged={seekTimeChanged}
-            updateCurrentVideoTime={updateCurrentVideoTime}
-            updateCurrentPausedState={updateCurrentPausedState}
-          />
-          <div className="absolute top-3 left-3">
-            <AnnotationBanner
+  
+        <div className="col-span-13 h-desktop relative mr-12 flex flex-col">
+          <div className="flex-grow relative bg-black">
+            <AnnotationVideo
+              videoUrl={videoUrl}
+              videoPaused={videoPaused}
+              seekTime={seekTime}
+              seekTimeChanged={seekTimeChanged}
+              updateCurrentVideoTime={updateCurrentVideoTime}
+              updateCurrentPausedState={updateCurrentPausedState}
+            />
+            <div className="absolute top-3 left-3">
+              <AnnotationBanner
+                match={match}
+                annotations={annotations}
+                currentVideoTime={currentVideoTime}
+                annotationRange={annotationRange}
+              />
+            </div>
+          </div>
+  
+
+          <div className="h-50 w-full mt-2 bg-gray-100"
+            onMouseEnter={() => updateControlsOpen(true)}
+            onMouseLeave={() => updateControlsOpen(false)}
+          >
+            <AnnotationControls
+              baseUrl={baseUrl}
               match={match}
-              annotations={annotations}
-              currentVideoTime={currentVideoTime}
-              annotationRange={annotationRange}
+              annotationsUpdated={annotationsUpdated}
+              getAnnotationTimestamp={getAnnotationTimestamp}
             />
           </div>
-        </div>
-        <div
-          className="w-controls h-desktop transition-all -right-96 fixed transform hover:-translate-x-96 z-10"
-          onMouseEnter={() => updateControlsOpen(true)}
-          onMouseLeave={() => updateControlsOpen(false)}
-        >
-          <AnnotationControls
-            baseUrl={baseUrl}
-            match={match}
-            annotationsUpdated={annotationsUpdated}
-            getAnnotationTimestamp={getAnnotationTimestamp}
-          />
         </div>
       </div>
     </>

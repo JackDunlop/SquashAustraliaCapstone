@@ -113,18 +113,17 @@ export default function AnnotationControls({
 
   return (
     <>
-      <div className="h-full bg-gray-300 flex">
-        <div className="w-12 h-full grid place-content-center">
-          <div className="w-96 transform -rotate-90 text-xl grid place-content-center">
+      <div className="h-full bg-gray-300 flex flex-col p-4">
+          <div className="text-center py-2 font-semibold text-xl">
             Annotation Controls
           </div>
-        </div>
-        <ul className="w-full grid grid-cols-2 grid-rows-9 mx-2 py-4 gap-x-3 gap-y-4 h-full place-items-center">
+
+        <ul className="w-full grid grid-cols-4 py-2 gap-x-1 gap-y-1 h-full place-items-center">
           {annotationComponents
             .filter((component) => component.type === 'game')
             .map((game) => (
               <li
-                className="w-full h-full col-span-2 text-white font-semibold"
+                className="w-full h-full text-white font-semibold col-span-2"
                 onClick={() => updateSelectedAnnotation(game)}
                 key={game.id}
               >
@@ -135,6 +134,7 @@ export default function AnnotationControls({
                   selected={selectedAnnotation.id === game.id}
                   disabled={false}
                   match={match}
+                  className='p-2'
                 />
               </li>
             ))}
@@ -142,7 +142,7 @@ export default function AnnotationControls({
                 .filter((component) => component.type === 'rally')
                 .map((rally) => (
                     <li
-                        className="w-full h-full col-span-2 text-white font-semibold"
+                        className="w-full h-full text-white font-semibold col-span-2"
                         onClick={() => updateSelectedAnnotation(rally)}
                         key={rally.id}
                     >
@@ -153,6 +153,7 @@ export default function AnnotationControls({
                             selected={selectedAnnotation.id === rally.id}
                             disabled={false}
                             match={match}
+                            className='p-2'
                         />
                     </li>
                 ))}
@@ -160,7 +161,7 @@ export default function AnnotationControls({
             .filter((component) => component.type === 'player')
             .map((player) => (
               <li
-                className="w-full h-full col-span-2 text-white font-semibold"
+                className="w-full h-full text-white font-semibold col-span-2"
                 onClick={() => updateSelectedPlayer(player)}
                 key={player.id}
               >
@@ -171,6 +172,7 @@ export default function AnnotationControls({
                   selected={selectedPlayer.id === player.id}
                   disabled={false}
                   match={match}
+                  className='p-2'
                 />
               </li>
             ))}
@@ -178,7 +180,7 @@ export default function AnnotationControls({
             .filter((component) => component.type === 'shot')
             .map((shot) => (
               <li
-                className="w-full h-full"
+                className="w-full h-full font-semibold"
                 onClick={() => updateSelectedAnnotation(shot)}
                 key={shot.id}
               >
@@ -189,6 +191,7 @@ export default function AnnotationControls({
                   selected={selectedAnnotation.id === shot.id}
                   disabled={!(Object.entries(selectedPlayer).length > 0)}
                   match={match}
+                  className='p-2'
                 />
               </li>
             ))}
@@ -196,7 +199,7 @@ export default function AnnotationControls({
                 .filter((component) => component.type === 'score')
                       .map((score) => (
                     <li
-                        className="w-full h-full col-span-2 text-black font-semibold"
+                        className="w-full h-full text-black font-semibold"
                         onClick={() => updateSelectedAnnotation(score)}
                         key={score.id}
                     >
@@ -207,6 +210,7 @@ export default function AnnotationControls({
                         selected={selectedAnnotation.id === score.id}
                         disabled={!(Object.entries(selectedPlayer).length > 0)}
                         match={match}
+                        className='p-2'
                         />
                     </li>
                 ))}

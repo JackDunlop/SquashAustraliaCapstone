@@ -173,9 +173,11 @@ class ColourPicker extends React.Component {
     return error;
   };
 
-  handleSubmit = (event) => {
+  handleSubmit = async (event) => {
     let form_error = this.formValidation();
     event.preventDefault();
+    const baseUrl = this.props.baseUrl;
+    const from = this.state.value.from;
     const players = this.state.value.player;
     const title = this.state.value.title;
     const duration = this.state.value.duration;
@@ -187,28 +189,32 @@ class ColourPicker extends React.Component {
     formData.append('video', video);
     
    // fsExtra.emptyDir(path.join(`${__dirname}../../tempstorage`)); need to do in here somewhere
-    if (!form_error) {
-      axios
-        .post(this.props.baseUrl + '/match/new', {
-          players,
-          title,
-          duration,
-          description,
-          courtBounds,
-          playerRGB,
-        })
-        .then((response) => {
-          axios.post(
-            this.props.baseUrl + '/video/' + response.data.match_id + '/upload',
-            formData
-          );
-        })
-        .then(
-          this.props.history.push({
-            pathname: '/home',
-            state: this.state.value.from,
-          })
-        );
+
+    if (form_error) {
+      console.error('Error occurred while creating a new match: Form validation');
+      return;
+    }
+
+    try {
+      const newMatchResponse = await axios.post(baseUrl + '/match/new', {
+        players,
+        title,
+        duration,
+        description,
+        courtBounds,
+        playerRGB,
+      });
+
+      if (!newMatchResponse || !newMatchResponse.data.match_id) {
+        throw new Error('Failed to create a new match');
+      };
+
+      await axios.post(baseUrl + '/video/' + newMatchResponse.data.match_id + '/upload', formData);
+
+      this.props.history.push({ pathname: '/home', state: from });
+    } catch (error) {
+      console.error('Error occurred while creating a new match:', error);
+      this.props.history.push({ pathname: '/home', state: from });
     }
   };
 

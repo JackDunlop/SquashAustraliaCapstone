@@ -49,6 +49,7 @@
     ]
   },
   "devDependencies": {
+    "@types/react-router-dom": "^5.3.3",
     "autoprefixer": "^9.8.6",
     "postcss": "^7.0.35",
     "prettier": "2.3.2",

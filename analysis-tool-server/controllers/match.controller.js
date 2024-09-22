@@ -53,36 +53,37 @@ const update = async (req, res, next) => {
 
 // remove match
 const remove = async (req, res, next) => {
-  let [result, err] = await util.handle(Match.deleteOne({ _id: req.params.match_id }));
-
-  if (err || result.deletedCount === 0) return res.status(400).json('Failed to remove match.');
-
-  const videoFileFormats = ['mp4', 'mov', 'avi'];
-
-  const findVideoFile = async () => {
-    for (let videoFileFormat of videoFileFormats) {
-      let _path =
-        path.join(
-          `${__dirname}../../videos/${req.params.match_id}.${videoFileFormat}`
-        );
-
-      // ensure that the video file exists
-      if (fs.existsSync(_path)) return _path;
-    }
-
-    return '';
+  try {
+    await Match.deleteOne({ _id: req.params.match_id });
+  } catch (error) {
+    throw new Error('Failed to remove match: ', error);
   }
 
-  const videoFilePath = await findVideoFile();
+  let filePath = '';
+  const allowedFileFormats = ['mp4', 'mov', 'avi'];
 
-  if (videoFilePath !== '') {
-    [result, err] = await util.handleFileRemoval(videoFilePath);
+  for (let videoFileFormat of allowedFileFormats) {
+    const foundPath =
+      path.join(
+        `${__dirname}../../videos/${req.params.match_id}.${videoFileFormat}`
+      );
 
-    if (err) return res.status(400).json(err.message);
+    if (fs.existsSync(foundPath)) {
+      filePath = foundPath;
+      break;
+    };
+  }
 
+  if (!filePath) {
+    return res.status(200).json('Successfully removed match. Could not find an associated video to remove.');
+  }
+
+  try {
+    fs.unlinkSync(filePath);
     return res.status(200).json('Successfully removed match.');
-  } else {
-    return res.status(200).json('Successfully removed match. Failed to remove match video.')
+  } catch (error) {
+    console.error('Failed to remove match: ', error);
+    return res.status(400).json('Failed to remove match video');
   }
 };
 

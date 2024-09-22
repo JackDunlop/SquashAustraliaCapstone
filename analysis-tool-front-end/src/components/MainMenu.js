@@ -67,14 +67,14 @@ export default function MainMenu(props) {
       <div className="grid grid-cols-12">
         {matches &&
           matches.length &&
-          matches.map((match) => {
+          matches.map((match) => (
             <MatchCard
               key={match.id}
               match={match}
               baseUrl={baseUrl}
               onRemoveMatch={removeMatch}
-            />;
-          })}
+            />
+          ))}
       </div>
     </div>
   );

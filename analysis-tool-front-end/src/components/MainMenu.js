@@ -1,6 +1,6 @@
 import { React, useState, useEffect } from 'react';
 import { Link, useHistory } from 'react-router-dom';
-import MatchCard from './MatchCard';
+import MatchCard from './MatchCard/MatchCard';
 
 const axios = require('axios').default;
 
@@ -9,16 +9,23 @@ export default function MainMenu(props) {
   const { baseUrl } = props;
   const [matches, setMatches] = useState([]);
 
-  const removeMatch = (matchId) => {
+  const removeMatch = async (matchId) => {
     const confirmed = window.confirm(
       'Are you sure you want to remove this match?'
     );
 
     if (confirmed) {
-      axios
-        .post(`${baseUrl}/match/${matchId}/remove`)
-        .then((res) => alert(res.data))
-        .then(setMatches([]));
+      const response = await axios.post(`${baseUrl}/match/${matchId}/remove`);
+
+      if (response.status !== 200) {
+        alert('Error removing match. Please try again later.');
+        return;
+      }
+
+      const newMatches = matches.filter((match) => match.id !== matchId);
+
+      setMatches(newMatches);
+      alert(response.data);
     }
   };
 
@@ -60,14 +67,11 @@ export default function MainMenu(props) {
         </h2>
       </div>
 
-      {!matches.length && (
+      {matches.length === 0 ? (
         <div className="px-5 py-3 col-span-12">No matches found.</div>
-      )}
-
-      <div className="grid grid-cols-12">
-        {matches &&
-          matches.length &&
-          matches.map((match) => (
+      ) : (
+        <div className="grid grid-cols-12">
+          {matches.map((match) => (
             <MatchCard
               key={match.id}
               match={match}
@@ -75,7 +79,8 @@ export default function MainMenu(props) {
               onRemoveMatch={removeMatch}
             />
           ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

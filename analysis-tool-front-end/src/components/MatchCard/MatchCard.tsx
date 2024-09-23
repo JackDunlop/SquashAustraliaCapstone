@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import MatchCardButton from './MatchCardButton';
 
 interface MatchCardProps {
   match: Match;
@@ -53,6 +53,33 @@ export default function MatchCard({
     }
   };
 
+  const buttons = [
+    {
+      label: 'View',
+      href: '/view_video/' + id,
+      color: 'green',
+      onClick: () => {},
+    },
+    {
+      label: 'Edit',
+      href: '/match/' + id,
+      color: 'blue',
+      onClick: () => {},
+    },
+    {
+      label: isPoseReady ? 'Analytics Ready' : 'Analytics',
+      href: isPoseReady ? `/analytics/${id}` : '#',
+      color: isPoseReady ? 'purple' : 'purple',
+      onClick: () => handleAnalyticsClick(id),
+    },
+    {
+      label: 'Remove',
+      href: '#',
+      color: 'red',
+      onClick: () => onRemoveMatch(id),
+    },
+  ];
+
   return (
     <div key={id} className="p-5 col-span-12 sm:col-span-6 lg:col-span-4">
       <div className="overflow-hidden shadow-xl border-2 border-gray-100">
@@ -70,44 +97,24 @@ export default function MatchCard({
           </p>
           <p className="whitespace-normal">{description}</p>
           <div className="pt-3 pb-2">
-            <a href={'/view_video/' + id}>
-              <button className="bg-green-700 hover:bg-green-600 text-white font-bold py-2 px-4 mx-1 rounded-lg">
-                View
-              </button>
-            </a>
-            <a href={'/match/' + id}>
-              <button className="bg-blue-700 hover:bg-blue-600 text-white font-bold py-2 px-4 mx-1 rounded-lg">
-                Edit
-              </button>
-            </a>
-            {isPoseReady ? (
-              <Link to={`/analytics/${id}`}>
-                <div>
-                  <button className="bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 mx-1 rounded-lg">
-                    Analytics Ready
-                  </button>
-                </div>
-              </Link>
-            ) : (
-              <button
-                onClick={() => handleAnalyticsClick(id)}
-                className={`bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 mx-1 rounded-lg ${
-                  isAnalyticsLoading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                disabled={isAnalyticsLoading}
-              >
-                {isAnalyticsLoading ? 'Loading...' : 'Analytics'}
-              </button>
-            )}
-            <button
-              onClick={() => onRemoveMatch(id)}
-              className="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 mx-1 rounded-lg"
-            >
-              Remove
-            </button>
+            {buttons.map((button) => {
+              return (
+                <MatchCardButton
+                  key={button.label}
+                  id={id}
+                  color={button.color}
+                  label={button.label}
+                  href={button.href}
+                  onClick={button.onClick}
+                  isPoseReady={isPoseReady}
+                  isAnalyticsLoading={isAnalyticsLoading}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
     </div>
   );
 }
+

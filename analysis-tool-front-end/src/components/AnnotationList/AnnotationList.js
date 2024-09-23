@@ -5,6 +5,7 @@ import { faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import { convertSecondsToMilliseconds } from '../../utils/convertSecondsToMilliseconds';
 import AnnotationListFilter from './AnnotationListFilter';
+import AnnotationListActions from './AnnotationListActions';
 
 export default function AnnotationList({
   baseUrl,
@@ -313,278 +314,250 @@ export default function AnnotationList({
 
   return (
     //This is the left hand side of the screen. The annotation log and resulting menus
-    <>
-      <div className="h-full flex flex-col">
-        <div className="flex-grow w-full p-1 border-2 border-gray-500 overflow-auto">
-          <h1 className="text-center text-lg font-bold mb-1">{match.title}</h1>
-          <table className="table-fixed w-full">
-            <thead>
-              <tr>
-                <th
-                  className="w-6/8 border border-white rounded"
-                  style={{ backgroundColor: player1Color }}
-                >
-                  {match.players ? match.players.player1 : 'Player 1'}{' '}
-                </th>
-                <th
-                  className="w-2/8 border border-white rounded"
-                  style={{ backgroundColor: player2Color }}
-                >
-                  {match.players ? match.players.player2 : 'Player 2'}
-                </th>
-              </tr>
-            </thead>
-          </table>
-          <table className="table-fixed w-full">
-            <thead>
-              <tr>
-                <th className="w-6/8">Annotation </th>
-                <th className="w-2/8">Time</th>
-                <th className="w-2/8">Player Position</th>
-                <th className="w-2/8">Opponent Position</th>
-              </tr>
-            </thead>
-            <tbody>
-              <Modal onClose={showModal} show={show} title={'Edit Annotation'}>
-                <div className="content">
-                  <div className="border-2 p-2">
-                    <h3 className="text-lg mb-1 inline">
-                      {' '}
-                      <span className="font-bold"> Annotation: </span>{' '}
-                      {modalContent.shotText}{' '}
-                    </h3>{' '}
-                    <br />
-                    <h3 className="font-bold text-lg mb-1 inline"> Time: </h3>
-                    <label className="inline">
-                      <span className="ml-2">H:</span>
+    <div className="h-full flex flex-col">
+      <div className="flex-grow w-full p-1 border-2 border-gray-500 overflow-auto">
+        <h1 className="text-center text-lg font-bold mb-1">{match.title}</h1>
+        <table className="table-fixed w-full">
+          <thead>
+            <tr>
+              <th
+                className="w-6/8 border border-white rounded"
+                style={{ backgroundColor: player1Color }}
+              >
+                {match.players ? match.players.player1 : 'Player 1'}{' '}
+              </th>
+              <th
+                className="w-2/8 border border-white rounded"
+                style={{ backgroundColor: player2Color }}
+              >
+                {match.players ? match.players.player2 : 'Player 2'}
+              </th>
+            </tr>
+          </thead>
+        </table>
+        <table className="table-fixed w-full">
+          <thead>
+            <tr>
+              <th className="w-6/8">Annotation </th>
+              <th className="w-2/8">Time</th>
+              <th className="w-2/8">Player Position</th>
+              <th className="w-2/8">Opponent Position</th>
+            </tr>
+          </thead>
+          <tbody>
+            <Modal onClose={showModal} show={show} title={'Edit Annotation'}>
+              <div className="content">
+                <div className="border-2 p-2">
+                  <h3 className="text-lg mb-1 inline">
+                    {' '}
+                    <span className="font-bold"> Annotation: </span>{' '}
+                    {modalContent.shotText}{' '}
+                  </h3>{' '}
+                  <br />
+                  <h3 className="font-bold text-lg mb-1 inline"> Time: </h3>
+                  <label className="inline">
+                    <span className="ml-2">H:</span>
 
-                      <input
-                        type="number"
-                        min="0"
-                        value={modalContent.timeTextH}
-                        onChange={(event) =>
-                          handleTimeChange(event, 'timeTextH')
-                        }
-                        className="w-1/5 ml-1 form-text border-2 pl-1"
-                      />
-                    </label>
-                    <label className="inline ml-2">
-                      <span className="">M:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={modalContent.timeTextH}
+                      onChange={(event) => handleTimeChange(event, 'timeTextH')}
+                      className="w-1/5 ml-1 form-text border-2 pl-1"
+                    />
+                  </label>
+                  <label className="inline ml-2">
+                    <span className="">M:</span>
 
-                      <input
-                        type="number"
-                        min="0"
-                        value={modalContent.timeTextM}
-                        onChange={(event) =>
-                          handleTimeChange(event, 'timeTextM')
-                        }
-                        className="w-1/5 ml-1 form-text border-2 pl-1"
-                      />
-                    </label>
-                    <label className="inline ml-2">
-                      <span className="">S:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={modalContent.timeTextM}
+                      onChange={(event) => handleTimeChange(event, 'timeTextM')}
+                      className="w-1/5 ml-1 form-text border-2 pl-1"
+                    />
+                  </label>
+                  <label className="inline ml-2">
+                    <span className="">S:</span>
 
-                      <input
-                        type="number"
-                        max="60"
-                        min="0"
-                        value={modalContent.timeTextS}
-                        onChange={(event) =>
-                          handleTimeChange(event, 'timeTextS')
-                        }
-                        className="w-1/5 ml-1 form-text border-2 pl-1"
-                      />
-                    </label>
-                    <br></br>
-                    <h3 className="font-bold text-lg mb-1 inline">
-                      {' '}
-                      Player Location:{' '}
-                    </h3>
-                    <label className="inline ml-2">
-                      <input
-                        type="number"
-                        max="5"
-                        min="1"
-                        value={modalContent.playerPosition}
-                        onChange={(event) =>
-                          handleNewChange(event, 'playerPosition')
-                        }
-                        className="w-1/5 ml-1 form-text border-2 pl-1"
-                      />
-                    </label>
-                    <br></br>
-                    <h3 className="font-bold text-lg mb-1 inline">
-                      {' '}
-                      Opponent Location:{' '}
-                    </h3>
-                    <label className="inline ml-2">
-                      <input
-                        type="number"
-                        max="5"
-                        min="1"
-                        value={modalContent.opponentPosition}
-                        onChange={(event) =>
-                          handleNewChange(event, 'opponentPosition')
-                        }
-                        className="w-1/5 ml-1 form-text border-2 pl-1"
-                      />
-                    </label>
-                    <br></br>
-                    <h3 className="font-bold text-lg mb-1 inline">
-                      Locations:{' '}
-                    </h3>
-                    <ol class="list-group list-group-numbered">
-                      <li class="list-group-item">1. Front Left</li>
-                      <li class="list-group-item">2. Front Right</li>
-                      <li class="list-group-item">3. Back Left</li>
-                      <li class="list-group-item">4. Back Right</li>
-                      <li class="list-group-item">5. T-Zone</li>
-                    </ol>
-                  </div>
+                    <input
+                      type="number"
+                      max="60"
+                      min="0"
+                      value={modalContent.timeTextS}
+                      onChange={(event) => handleTimeChange(event, 'timeTextS')}
+                      className="w-1/5 ml-1 form-text border-2 pl-1"
+                    />
+                  </label>
+                  <br></br>
+                  <h3 className="font-bold text-lg mb-1 inline">
+                    {' '}
+                    Player Location:{' '}
+                  </h3>
+                  <label className="inline ml-2">
+                    <input
+                      type="number"
+                      max="5"
+                      min="1"
+                      value={modalContent.playerPosition}
+                      onChange={(event) =>
+                        handleNewChange(event, 'playerPosition')
+                      }
+                      className="w-1/5 ml-1 form-text border-2 pl-1"
+                    />
+                  </label>
+                  <br></br>
+                  <h3 className="font-bold text-lg mb-1 inline">
+                    {' '}
+                    Opponent Location:{' '}
+                  </h3>
+                  <label className="inline ml-2">
+                    <input
+                      type="number"
+                      max="5"
+                      min="1"
+                      value={modalContent.opponentPosition}
+                      onChange={(event) =>
+                        handleNewChange(event, 'opponentPosition')
+                      }
+                      className="w-1/5 ml-1 form-text border-2 pl-1"
+                    />
+                  </label>
+                  <br></br>
+                  <h3 className="font-bold text-lg mb-1 inline">Locations: </h3>
+                  <ol class="list-group list-group-numbered">
+                    <li class="list-group-item">1. Front Left</li>
+                    <li class="list-group-item">2. Front Right</li>
+                    <li class="list-group-item">3. Back Left</li>
+                    <li class="list-group-item">4. Back Right</li>
+                    <li class="list-group-item">5. T-Zone</li>
+                  </ol>
                 </div>
-                <div className="actions">
-                  <button
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mr-2"
-                    onClick={(e) => {
-                      setAnnotationToEdit(modalContent);
-                    }}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4"
-                    onClick={showModal}
-                  >
-                    Close
-                  </button>
-                </div>
-              </Modal>
-              {filterAnnotations.map((annotation) => {
-                return (
-                  <tr
-                    className="hasTooltip text-center border-t-2 border-fuchsia-600"
-                    key={annotation.id}
-                  >
-                    <td className="w-1/2">
-                      <div className="tooltip-container has-tooltip">
-                        <div className="overflow-hidden text-center">
-                          {annotation.components.id === 'New Game' && (
-                            <span className="grid place-items-center text-red-600 font-bold overflow-x-hidden w-full px-2">
+              </div>
+              <div className="actions">
+                <button
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mr-2"
+                  onClick={(e) => {
+                    setAnnotationToEdit(modalContent);
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4"
+                  onClick={showModal}
+                >
+                  Close
+                </button>
+              </div>
+            </Modal>
+            {filterAnnotations.map((annotation) => {
+              return (
+                <tr
+                  className="hasTooltip text-center border-t-2 border-fuchsia-600"
+                  key={annotation.id}
+                >
+                  <td className="w-1/2">
+                    <div className="tooltip-container has-tooltip">
+                      <div className="overflow-hidden text-center">
+                        {annotation.components.id === 'New Game' && (
+                          <span className="grid place-items-center text-red-600 font-bold overflow-x-hidden w-full px-2">
+                            {annotation.components.id}
+                          </span>
+                        )}
+                        {(annotation.components.type === 'shot' ||
+                          annotation.components.type === 'score') &&
+                          annotation.playerNumber === 1 && (
+                            <span className="grid place-items-center bg-yellow-600 overflow-x-hidden w-full px-2">
                               {annotation.components.id}
                             </span>
                           )}
-                          {(annotation.components.type === 'shot' ||
-                            annotation.components.type === 'score') &&
-                            annotation.playerNumber === 1 && (
-                              <span className="grid place-items-center bg-yellow-600 overflow-x-hidden w-full px-2">
-                                {annotation.components.id}
-                              </span>
-                            )}
-                          {(annotation.components.type === 'shot' ||
-                            annotation.components.type === 'score') &&
-                            annotation.playerNumber === 2 && (
-                              <span className="grid place-items-center bg-green-600 overflow-x-hidden w-full px-2">
-                                {annotation.components.id}
-                              </span>
-                            )}
-                          {annotation.components.type === 'rally' && (
-                            <span className="grid place-items-center overflow-x-hidden w-full px-2">
+                        {(annotation.components.type === 'shot' ||
+                          annotation.components.type === 'score') &&
+                          annotation.playerNumber === 2 && (
+                            <span className="grid place-items-center bg-green-600 overflow-x-hidden w-full px-2">
                               {annotation.components.id}
                             </span>
                           )}
-                        </div>
-                        <div className="tooltip shadow-lg px-3 py-1 bg-blue-600 text-white">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              showModal(
-                                annotation.components.id,
-                                annotation.timestamp,
-                                annotation,
-                                annotation.playerPos,
-                                annotation.opponentPos
-                              );
-                            }}
-                          >
-                            <FontAwesomeIcon className="pr-1" icon={faEdit} />
-                            Edit{' '}
-                          </button>{' '}
-                          |
-                          <button
-                            type="button"
-                            className="pl-2"
-                            onClick={() => removeAnnotation(annotation)}
-                          >
-                            <FontAwesomeIcon icon={faTrash} /> Remove
-                          </button>
-                        </div>
+                        {annotation.components.type === 'rally' && (
+                          <span className="grid place-items-center overflow-x-hidden w-full px-2">
+                            {annotation.components.id}
+                          </span>
+                        )}
                       </div>
-                    </td>
-                    <td>
-                      <button
-                        className="hover:text-blue-500"
-                        onClick={() =>
-                          jumpToAnnotation(
-                            annotation.timestamp,
-                            filterAnnotations
-                          )
-                        }
-                      >
-                        {convertSecondsToMilliseconds(annotation.timestamp)}
-                      </button>
-                    </td>
-                    <td>{gameZoneLabels[annotation.playerPos - 1]}</td>
-                    <td>{gameZoneLabels[annotation.opponentPos - 1]}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="w-full mt-auto">
-          <div className="mt-1">
-            <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold border-r-4 border-white py-2 px-4 w-1/2"
-              onClick={toggleFilter}
-            >
-              {' '}
-              Filter{' '}
-            </button>
-            <a href={'/stats/' + match.id}>
-              <button className="bg-green-700 hover:bg-green-600 text-white font-bold py-2 px-4 w-1/2">
-                Statistics
-              </button>
-            </a>
-          </div>
-          <div className="mt-1">
-            <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold border-r-4 border-white py-2 px-4 w-full"
-              onClick={handleClearAll}
-            >
-              {' '}
-              Clear all{' '}
-            </button>
-          </div>
-        </div>
-        {showFilter ? 
-          <AnnotationListFilter 
-            player1IsChecked={player1IsChecked} 
-            player2IsChecked={player2IsChecked} 
-            checkedState={checkedState} 
-            filterTime={filterTime} 
-            playerFilterChange1={playerFilterChange1} 
-            playerFilterChange2={playerFilterChange2} 
-            match={match} 
-            unique_shots={unique_shots} 
-            shotFilterChange={shotFilterChange} 
-            filterTimeChange={filterTimeChange} 
-            clearFilters={clearFilters} 
-            toggleFilter={toggleFilter}
-          /> 
-          : null
-        }
+                      <div className="tooltip shadow-lg px-3 py-1 bg-blue-600 text-white">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            showModal(
+                              annotation.components.id,
+                              annotation.timestamp,
+                              annotation,
+                              annotation.playerPos,
+                              annotation.opponentPos
+                            );
+                          }}
+                        >
+                          <FontAwesomeIcon className="pr-1" icon={faEdit} />
+                          Edit{' '}
+                        </button>{' '}
+                        |
+                        <button
+                          type="button"
+                          className="pl-2"
+                          onClick={() => removeAnnotation(annotation)}
+                        >
+                          <FontAwesomeIcon icon={faTrash} /> Remove
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <button
+                      className="hover:text-blue-500"
+                      onClick={() =>
+                        jumpToAnnotation(
+                          annotation.timestamp,
+                          filterAnnotations
+                        )
+                      }
+                    >
+                      {convertSecondsToMilliseconds(annotation.timestamp)}
+                    </button>
+                  </td>
+                  <td>{gameZoneLabels[annotation.playerPos - 1]}</td>
+                  <td>{gameZoneLabels[annotation.opponentPos - 1]}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-    </>
+      
+      {/* Filter, Statistics & Clear All buttons */}
+      <AnnotationListActions 
+        id={match.id}
+        handleClearAll={handleClearAll}
+        toggleFilter={toggleFilter}
+      />
+
+      {showFilter ? (
+        <AnnotationListFilter
+          player1IsChecked={player1IsChecked}
+          player2IsChecked={player2IsChecked}
+          checkedState={checkedState}
+          filterTime={filterTime}
+          playerFilterChange1={playerFilterChange1}
+          playerFilterChange2={playerFilterChange2}
+          match={match}
+          unique_shots={unique_shots}
+          shotFilterChange={shotFilterChange}
+          filterTimeChange={filterTimeChange}
+          clearFilters={clearFilters}
+          toggleFilter={toggleFilter}
+        />
+      ) : null}
+    </div>
   );
 }
+

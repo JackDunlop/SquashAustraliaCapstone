@@ -446,13 +446,8 @@ export default function AnnotationList({
     </div>
   );
 
-  let player1Color = '';
-  let player2Color = '';
-
-  if (match.players) {
-    player1Color = `rgb(${match.players.player1Color.toString()})`;
-    player2Color = `rgb(${match.players.player2Color.toString()})`;
-  }
+  const player1Color = match.players ? `rgb(${match.players.player1Color.toString()})` : '#ca8a04';
+  const player2Color = match.players ? `rgb(${match.players.player1Color.toString()})` : '#16a34a';
 
   return (
     //This is the left hand side of the screen. The annotation log and resulting menus
@@ -465,13 +460,13 @@ export default function AnnotationList({
               <tr>
                 <th 
                   className="w-6/8 border border-white rounded"
-                  style={{ backgroundColor: player1Color ? player1Color : '#ca8a04' }}
+                  style={{ backgroundColor: player1Color }}
                 >
                   {match.players ? match.players.player1 : 'Player 1'}{' '}
                 </th>
                 <th 
                   className="w-2/8 border border-white rounded"
-                  style={{ backgroundColor: player2Color ? player2Color : '#16a34a' }} 
+                  style={{ backgroundColor: player2Color }} 
                 >
                   {match.players ? match.players.player2 : 'Player 2'}
                 </th>

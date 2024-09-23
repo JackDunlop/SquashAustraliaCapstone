@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import AnnotationList from './AnnotationList';
+import { useState, useEffect } from 'react';
+import AnnotationList from './AnnotationList/AnnotationList';
 import AnnotationVideo from './AnnotationVideo';
 import AnnotationBanner from './AnnotationBanner';
 import AnnotationControls from './AnnotationControls';

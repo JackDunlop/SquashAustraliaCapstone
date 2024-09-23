@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Modal from './Modal';
+import Modal from '../Modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
-import { convertSecondsToMilliseconds } from '../utils/convertSecondsToMilliseconds';
+import { convertSecondsToMilliseconds } from '../../utils/convertSecondsToMilliseconds';
+import AnnotationListFilter from './AnnotationListFilter';
 
 export default function AnnotationList({
   baseUrl,
@@ -35,7 +36,7 @@ export default function AnnotationList({
     'T-Zone',
   ];
 
-  var unique_shots = [
+  const unique_shots = [
     ...new Set(
       annotations
         .filter((annotation) => annotation.components.type === 'shot')
@@ -160,25 +161,27 @@ export default function AnnotationList({
 
   const playerFilterChange2 = () => {
     player2SetIsChecked(!player2IsChecked);
+
+    let newAnnotations = [...annotations];
+
     if (player1IsChecked && !player2IsChecked) {
-      let newAnnotations = annotations.filter(
+      newAnnotations = annotations.filter(
         (annotation) =>
           annotation.playerNumber === 1 || annotation.playerNumber === 2
       );
-      setFilterAnnotations(newAnnotations);
     } else if (player1IsChecked) {
-      let newAnnotations = annotations.filter(
+      newAnnotations = annotations.filter(
         (annotation) => annotation.playerNumber === 1
       );
-      setFilterAnnotations(newAnnotations);
     } else if (!player2IsChecked) {
-      let newAnnotations = annotations.filter(
+      newAnnotations = annotations.filter(
         (annotation) => annotation.playerNumber === 2
       );
-      setFilterAnnotations(newAnnotations);
     } else {
       clearFilters();
     }
+
+    setFilterAnnotations(newAnnotations);
   };
 
   const shotFilterChange = (position) => {
@@ -301,153 +304,12 @@ export default function AnnotationList({
     setAnnotationToRemove(annotation);
   };
 
-  const Filter = () => (
-    <div className="modal" id="modal">
-      <h2 className="text-center">Filter Annotations</h2>
-      <div className="content">
-        <div className="container">
-          <div className="grid grid-cols-12">
-            <div className="col-start-1 col-end-13 border-2 p-2">
-              <h3 className="font-bold text-lg mb-1 text-left">
-                Filter by Player
-              </h3>
-              <div className="grid grid-cols-10">
-                <label className="col-start-1 col-end-5 p-2">
-                  <input
-                    type="checkbox"
-                    className="form-checkbox"
-                    checked={player1IsChecked}
-                    name={match.players['player1']}
-                    onChange={playerFilterChange1}
-                  />
-                  <span className="ml-2">{match.players['player1']}</span>
-                </label>
-
-                <label className="col-start-6 col-end-10 p-2">
-                  <input
-                    type="checkbox"
-                    className="form-checkbox"
-                    name={match.players['player2']}
-                    checked={player2IsChecked}
-                    onChange={playerFilterChange2}
-                  />
-                  <span className="ml-2">{match.players['player2']}</span>
-                </label>
-              </div>
-            </div>
-            <br></br>
-            <div className="col-start-1 col-end-6  border-2 p-2">
-              <h3 className="font-bold text-lg mb-1 text-center">
-                Filter by shot
-              </h3>
-              {unique_shots.map((shot, index) => {
-                return (
-                  <>
-                    <div key={shot.id}>
-                      <label className="block">
-                        <input
-                          type="checkbox"
-                          className="form-checkbox"
-                          checked={checkedState[index]}
-                          onChange={() => shotFilterChange(index, shot)}
-                        />
-                        <span className="ml-2">{shot}</span>
-                      </label>
-                    </div>
-                  </>
-                );
-              })}
-            </div>
-
-            <div className="col-start-7 col-end-13 border-2 p-2">
-              <h3 className="font-bold text-lg mb-1 text-center">
-                Filter by time
-              </h3>
-              <h5 className="">Start Time:</h5>
-
-              <div className="">
-                <label className="inline">
-                  <span className="">Min</span>
-
-                  <input
-                    type="number"
-                    min="0"
-                    name="startTimeM"
-                    value={filterTime.startTimeM}
-                    onChange={(event) => filterTimeChange(event, 'startTimeM')}
-                    className="w-1/4 ml-2 form-text border-2 mr-1 pl-1"
-                  />
-                </label>
-
-                <label className="inline">
-                  <span className="">Sec</span>
-
-                  <input
-                    type="number"
-                    max="60"
-                    min="0"
-                    name="startTimeS"
-                    value={filterTime.startTimeS}
-                    onChange={(event) => filterTimeChange(event, 'startTimeS')}
-                    className="w-1/4 ml-2 form-text border-2 pl-1"
-                  />
-                </label>
-              </div>
-              <h5 className="">End Time:</h5>
-
-              <div className="">
-                <label className="inline">
-                  <span className="">Min</span>
-
-                  <input
-                    type="number"
-                    min="0"
-                    name="endTimeM"
-                    value={filterTime.endTimeM}
-                    onChange={(event) => filterTimeChange(event, 'endTimeM')}
-                    className="w-1/4 ml-2 form-text border-2 mr-1 pl-1"
-                  />
-                </label>
-
-                <label className="inline">
-                  <span className="">Sec</span>
-
-                  <input
-                    type="number"
-                    max="60"
-                    name="endTimeS"
-                    value={filterTime.endTimeS}
-                    onChange={(event) => filterTimeChange(event, 'endTimeS')}
-                    className="w-1/4 ml-2 form-text border-2 pl-1"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="actions">
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mr-2"
-          onClick={clearFilters}
-        >
-          {' '}
-          Clear Filters{' '}
-        </button>
-        <button
-          className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4"
-          onClick={toggleFilter}
-        >
-          {' '}
-          Close{' '}
-        </button>
-      </div>
-    </div>
-  );
-
-  const player1Color = match.players ? `rgb(${match.players.player1Color.toString()})` : '#ca8a04';
-  const player2Color = match.players ? `rgb(${match.players.player1Color.toString()})` : '#16a34a';
+  const player1Color = match.players
+    ? `rgb(${match.players.player1Color.toString()})`
+    : '#ca8a04';
+  const player2Color = match.players
+    ? `rgb(${match.players.player1Color.toString()})`
+    : '#16a34a';
 
   return (
     //This is the left hand side of the screen. The annotation log and resulting menus
@@ -458,15 +320,15 @@ export default function AnnotationList({
           <table className="table-fixed w-full">
             <thead>
               <tr>
-                <th 
+                <th
                   className="w-6/8 border border-white rounded"
                   style={{ backgroundColor: player1Color }}
                 >
                   {match.players ? match.players.player1 : 'Player 1'}{' '}
                 </th>
-                <th 
+                <th
                   className="w-2/8 border border-white rounded"
-                  style={{ backgroundColor: player2Color }} 
+                  style={{ backgroundColor: player2Color }}
                 >
                   {match.players ? match.players.player2 : 'Player 2'}
                 </th>
@@ -705,7 +567,23 @@ export default function AnnotationList({
             </button>
           </div>
         </div>
-        {showFilter ? <Filter /> : null}
+        {showFilter ? 
+          <AnnotationListFilter 
+            player1IsChecked={player1IsChecked} 
+            player2IsChecked={player2IsChecked} 
+            checkedState={checkedState} 
+            filterTime={filterTime} 
+            playerFilterChange1={playerFilterChange1} 
+            playerFilterChange2={playerFilterChange2} 
+            match={match} 
+            unique_shots={unique_shots} 
+            shotFilterChange={shotFilterChange} 
+            filterTimeChange={filterTimeChange} 
+            clearFilters={clearFilters} 
+            toggleFilter={toggleFilter}
+          /> 
+          : null
+        }
       </div>
     </>
   );

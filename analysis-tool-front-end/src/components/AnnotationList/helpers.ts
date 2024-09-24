@@ -1,6 +1,6 @@
 import axios from "axios";
 import { BASE_URL } from "../../constants";
-import { deleteAnnotationProps, EditAnnotationProps } from "../../types";
+import { DeleteAnnotationProps, EditAnnotationProps } from "../../types";
 
 
 /**
@@ -55,7 +55,7 @@ export const editAnnotation = async ({
 export const deleteAnnotation = async ({
     annotationId,
     matchId,
-}: deleteAnnotationProps) => {
+}: DeleteAnnotationProps) => {
     try {
         if (!annotationId || !matchId) {
             throw new Error('Invalid annotation or match ID');

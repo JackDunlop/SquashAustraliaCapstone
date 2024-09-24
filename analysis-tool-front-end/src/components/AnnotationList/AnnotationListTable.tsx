@@ -8,13 +8,20 @@ export default function AnnotationListTable({
   modalContent,
   handleTimeChange,
   handleNewChange,
-  setAnnotationToEdit,
+  onEditAnnotation,
   match,
   filterAnnotations,
-  removeAnnotation,
+  onDeleteAnnotation,
   jumpToAnnotation,
-  gameZoneLabels,
 }: AnnotationListTableProps) {
+  const gameZoneLabels = [
+    'Front Left',
+    'Front Right',
+    'Back Left',
+    'Back Right',
+    'T-Zone',
+  ];
+
   const annotationListHeaders = [
     'Annotation',
     'Time',
@@ -73,7 +80,8 @@ export default function AnnotationListTable({
             modalContent={modalContent}
             handleTimeChange={handleTimeChange}
             handleNewChange={handleNewChange}
-            setAnnotationToEdit={setAnnotationToEdit}
+            onEditAnnotation={onEditAnnotation}
+            matchId={match.id}
           />
 
           {/* List of Annotations */}
@@ -81,10 +89,11 @@ export default function AnnotationListTable({
             <AnnotationListItem
               annotation={annotation}
               showModal={showModal}
-              removeAnnotation={removeAnnotation}
+              onDeleteAnnotation={onDeleteAnnotation}
               jumpToAnnotation={jumpToAnnotation}
               gameZoneLabels={gameZoneLabels}
               filterAnnotations={filterAnnotations}
+              matchId={match.id}
             />
           ))}
         </tbody>

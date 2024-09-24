@@ -61,13 +61,17 @@ export interface AnnotationListItemProps {
     playerPos?: number,
     opponentPos?: number
   ) => void;
-  removeAnnotation: (annotation: Annotation) => void;
+  onDeleteAnnotation: ({
+    annotationId,
+    matchId,
+  }: OnDeleteAnnotationProps) => Promise<void>;
   jumpToAnnotation: (
     annotationTimeStamp: number,
     filterAnnotations: Annotation[]
   ) => void;
   filterAnnotations: Annotation[];
   gameZoneLabels: string[];
+  matchId: string;
 }
 
 export interface AnnotationListTableProps {
@@ -76,11 +80,17 @@ export interface AnnotationListTableProps {
   modalContent: any;
   handleTimeChange: (event: any, time: string) => void;
   handleNewChange: (event: any, time: string) => void;
-  setAnnotationToEdit: (annotation: any) => void;
+  onEditAnnotation: ({
+    annotationToEdit,
+    matchId,
+  }: OnEditAnnotationProps) => Promise<void>;
   annotationListHeaders: string[];
   match: Match;
   filterAnnotations: Annotation[];
-  removeAnnotation: (annotation: Annotation) => void;
+  onDeleteAnnotation: ({
+    annotationId,
+    matchId,
+  }: OnDeleteAnnotationProps) => Promise<void>;
   jumpToAnnotation: (
     annotationTimeStamp: number,
     filterAnnotations: Annotation[]
@@ -95,18 +105,43 @@ export interface AnnotationListActionsProps {
 }
 
 export interface EditAnnotationProps {
-  annotationToEdit: {
-      annotation: Annotation;
-      timeTextH: number;
-      timeTextM: number;
-      timeTextS: number;
-      playerPosition: number;
-      opponentPosition: number;
-  };
+  annotationToEdit: AnnotationToEdit;
   matchId: string;
 }
 
-export interface deleteAnnotationProps {
+export interface DeleteAnnotationProps {
+  annotationId: string;
+  matchId: string;
+}
+
+export interface AnnotationListEditModalProps {
+  showModal: () => void;
+  show: boolean;
+  modalContent: any;
+  onEditAnnotation: ({
+    annotationToEdit,
+    matchId,
+  }: OnEditAnnotationProps) => Promise<void>;
+  handleTimeChange: (event: any, time: string) => void;
+  handleNewChange: (event: any, time: string) => void;
+  matchId: string;
+}
+
+interface AnnotationToEdit {
+  annotation: Annotation;
+  timeTextH: number;
+  timeTextM: number;
+  timeTextS: number;
+  playerPosition: number;
+  opponentPosition: number;
+}
+
+interface OnEditAnnotationProps {
+  annotationToEdit: AnnotationToEdit;
+  matchId: string;
+}
+
+interface OnDeleteAnnotationProps {
   annotationId: string;
   matchId: string;
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import AnnotationListFilterModal from './AnnotationListFilterModal';
 import AnnotationListActions from './AnnotationListActions';
 import AnnotationListTable from './AnnotationListTable';
@@ -10,7 +10,6 @@ import {
 } from './helpers';
 
 export default function AnnotationList({
-  baseUrl,
   match,
   annotations,
   annotationsUpdated,
@@ -19,8 +18,6 @@ export default function AnnotationList({
   pauseVideo,
 }) {
   const [filterAnnotations, setFilterAnnotations] = useState([]);
-  const [annotationToRemove, setAnnotationToRemove] = useState({});
-  const [annotationToEdit, setAnnotationToEdit] = useState({});
   const [show, setShow] = useState(false);
   const [showFilter, setFilterShow] = useState(false);
   const [filterTime, setFilterTime] = useState({
@@ -31,13 +28,6 @@ export default function AnnotationList({
   });
   const [checkedState, setCheckedState] = useState(new Array(12).fill(false));
   const [modalContent, setModalContent] = useState({});
-  const gameZoneLabels = [
-    'Front Left',
-    'Front Right',
-    'Back Left',
-    'Back Right',
-    'T-Zone',
-  ];
 
   const unique_shots = [
     ...new Set(
@@ -51,25 +41,21 @@ export default function AnnotationList({
    * Handles removing an annotation.
    *
    * @param annotationId - The ID of the annotation to remove
-   * @param matchId - The ID of the match the annotation belongs to
+   * @param {string} matchId - The ID of the match the annotation belongs to
    * @returns void
    */
-  const handleDeleteAnnotation = useCallback(
-    async (annotationId, matchId) => {
-      const isSuccess = await deleteAnnotation({ annotationId, matchId });
+  const handleDeleteAnnotation = async ({ annotationId, matchId }) => {
+    const isSuccess = await deleteAnnotation({ annotationId, matchId });
 
-      if (isSuccess) {
-        setAnnotationToRemove({});
-        annotationsUpdated();
-      }
-    },
-    [annotationsUpdated]
-  );
+    if (isSuccess) {
+      annotationsUpdated();
+    }
+  };
 
   /**
    * Fetches annotations for a given match.
    *
-   * @param matchId - The ID of the match to fetch annotations for
+   * @param {string} matchId - The ID of the match to fetch annotations for
    * @return void
    */
   const handleGetAnnotations = async (matchId) => {
@@ -97,41 +83,17 @@ export default function AnnotationList({
    * Handles editing an annotation.
    *
    * @param annotationToEdit - The annotation to edit
-   * @param matchId - The ID of the match the annotation belongs to
+   * @param {string} matchId - The ID of the match the annotation belongs to
    * @returns void
    */
-  const handleEditAnnotation = useCallback(
-    async (annotationToEdit, matchId) => {
-      const isSuccess = await editAnnotation({ annotationToEdit, matchId });
+  const handleEditAnnotation = async ({ annotationToEdit, matchId }) => {
+    const isSuccess = await editAnnotation({ annotationToEdit, matchId });
 
-      if (isSuccess) {
-        setAnnotationToEdit({});
-        annotationsUpdated();
-      }
-    },
-    [annotationsUpdated]
-  );
-
-  useEffect(() => {
-    setFilterAnnotations(annotations);
-
-    if ('id' in annotationToRemove) {
-      handleDeleteAnnotation(annotationToRemove.id, match.id);
+    if (isSuccess) {
+      annotationsUpdated();
+      setShow(false);
     }
-
-    if ('annotation' in annotationToEdit) {
-      handleEditAnnotation(annotationToEdit, match.id);
-    }
-  }, [
-    handleEditAnnotation,
-    handleDeleteAnnotation,
-    annotationToRemove,
-    annotationToEdit,
-    annotations,
-    annotationsUpdated,
-    baseUrl,
-    match,
-  ]);
+  };
 
   const clearFilters = () => {
     const updatedCheckedState = new Array(12).fill(false);
@@ -146,9 +108,17 @@ export default function AnnotationList({
     });
   };
 
+  /**
+   * Fetch annotations when the component mounts or match.id changes.
+   */
   useEffect(() => {
-    handleGetAnnotations(match.id); // Fetch annotations when the component mounts
-  }, [match.id]);
+    const fetchAndSetAnnotations = async () => {
+      await handleGetAnnotations(match.id);
+      setFilterAnnotations(annotations); 
+    };
+  
+    fetchAndSetAnnotations();
+  }, [match.id, annotations]);
 
   // I have no idea how this works other than the fact that it does
   const [player1IsChecked, player1SetIsChecked] = useState(false);
@@ -318,10 +288,6 @@ export default function AnnotationList({
     });
   };
 
-  const removeAnnotation = (annotation) => {
-    setAnnotationToRemove(annotation);
-  };
-
   return (
     //This is the left hand side of the screen. The annotation log and resulting menus
     <div className="h-full flex flex-col">
@@ -332,12 +298,11 @@ export default function AnnotationList({
         modalContent={modalContent}
         handleTimeChange={handleTimeChange}
         handleNewChange={handleNewChange}
-        setAnnotationToEdit={() => setAnnotationToEdit(modalContent)}
+        onEditAnnotation={handleEditAnnotation}
         match={match}
         filterAnnotations={filterAnnotations}
-        removeAnnotation={removeAnnotation}
+        onDeleteAnnotation={handleDeleteAnnotation}
         jumpToAnnotation={jumpToAnnotation}
-        gameZoneLabels={gameZoneLabels}
       />
 
       {/* Filter, Statistics & Clear All buttons */}

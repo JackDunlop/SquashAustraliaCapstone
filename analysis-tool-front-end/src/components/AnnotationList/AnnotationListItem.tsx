@@ -6,10 +6,11 @@ import { convertSecondsToMilliseconds } from '../../utils/convertSecondsToMillis
 export default function AnnotationListItem({
   annotation,
   showModal,
-  removeAnnotation,
+  onDeleteAnnotation,
   jumpToAnnotation,
   filterAnnotations,
   gameZoneLabels,
+  matchId,
 }: AnnotationListItemProps) {
   return (
     <tr
@@ -64,7 +65,9 @@ export default function AnnotationListItem({
             <button
               type="button"
               className="pl-2"
-              onClick={() => removeAnnotation(annotation)}
+              onClick={() => {
+                onDeleteAnnotation({ annotationId: annotation.id, matchId })
+              }}
             >
               <FontAwesomeIcon icon={faTrash} /> Remove
             </button>

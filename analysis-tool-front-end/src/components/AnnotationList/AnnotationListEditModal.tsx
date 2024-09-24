@@ -1,13 +1,5 @@
+import { AnnotationListEditModalProps } from '../../types';
 import Modal from '../Modal';
-
-interface AnnotationListEditModalProps {
-  showModal: () => void;
-  show: boolean;
-  modalContent: any;
-  setAnnotationToEdit: (annotation: any) => void;
-  handleTimeChange: (event: any, time: string) => void;
-  handleNewChange: (event: any, time: string) => void;
-}
 
 export default function AnnotationListEditModal({
   showModal,
@@ -15,7 +7,8 @@ export default function AnnotationListEditModal({
   modalContent,
   handleTimeChange,
   handleNewChange,
-  setAnnotationToEdit,
+  onEditAnnotation,
+  matchId,
 }: AnnotationListEditModalProps) {
   return (
     <Modal onClose={showModal} show={show} title={'Edit Annotation'}>
@@ -103,9 +96,9 @@ export default function AnnotationListEditModal({
       <div className="actions">
         <button
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mr-2"
-          onClick={(e) => {
-            setAnnotationToEdit(modalContent);
-          }}
+          onClick={(e) =>
+            onEditAnnotation({ annotationToEdit: modalContent, matchId })
+          }
         >
           Save
         </button>

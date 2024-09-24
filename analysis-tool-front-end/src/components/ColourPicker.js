@@ -30,6 +30,7 @@ function ColourPick(props) {
         .then(response => {
           setPlayerOneColourRGB(response.data.PlayerOne);
           setPlayerTwoColourRGB(response.data.PlayerTwo);
+          props.onUpdatePlayercolors(response.data.PlayerOne, response.data.PlayerTwo);
         })
         .catch(error => {
           console.error('Error occurred while fetching player data:', error);
@@ -173,6 +174,15 @@ class ColourPicker extends React.Component {
     return error;
   };
 
+  updatePlayerColors = (player1Color, player2Color) => {
+    const playerOneColor = player1Color;
+    const playerTwoColor = player2Color;
+
+    this.setState({
+      RGBArray: [playerOneColor, playerTwoColor],
+    });
+  }
+
   handleSubmit = async (event) => {
     let form_error = this.formValidation();
     event.preventDefault();
@@ -185,6 +195,7 @@ class ColourPicker extends React.Component {
     const video = this.state.value.video;
     const courtBounds = this.state.value.court_Bounds;
     const playerRGB = this.state.RGBArray;
+    console.log('playerRGB:', playerRGB);
     const formData = new FormData();
     formData.append('video', video);
     
@@ -237,6 +248,7 @@ class ColourPicker extends React.Component {
                 width={1280}
                 height={720}
                 players={this.state.value.player} 
+                onUpdatePlayercolors={this.updatePlayerColors}
               />
               <div type="submit" className={styles.ProcessDiv}>
                 <button className={styles.NextButtonColour}>Process</button>

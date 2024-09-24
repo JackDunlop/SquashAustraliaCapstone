@@ -36,7 +36,7 @@ export default function AnnotationListTable({
     ? `rgb(${match.players.player1Color.toString()})`
     : '#ca8a04';
   const player2Color = match.players
-    ? `rgb(${match.players.player1Color.toString()})`
+    ? `rgb(${match.players.player2Color.toString()})`
     : '#16a34a';
 
   return (

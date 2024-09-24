@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AnnotationListFilterProps } from '../../types';
 
-export default function AnnotationListFilter({
+export default function AnnotationListFilterModal({
   player1IsChecked,
   player2IsChecked,
   checkedState,

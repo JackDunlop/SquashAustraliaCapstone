@@ -1,8 +1,5 @@
-interface AnnotationListActionsProps {
-  id: String;
-  toggleFilter: () => void;
-  handleClearAll: () => void;
-}
+import { AnnotationListActionsProps } from "../../types";
+
 
 export default function AnnotationListActions({
   id,

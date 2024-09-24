@@ -82,7 +82,7 @@ export default function AnnotationList({
       handleDeleteAnnotation(annotationToRemove.id, match.id);
     }
 
-    if ('id' in annotationToEdit) {
+    if ('annotation' in annotationToEdit) {
       handleEditAnnotation(annotationToEdit, match.id);
     }
   }, [
@@ -319,7 +319,7 @@ export default function AnnotationList({
         modalContent={modalContent}
         handleTimeChange={handleTimeChange}
         handleNewChange={handleNewChange}
-        setAnnotationToEdit={setAnnotationToEdit}
+        setAnnotationToEdit={() => setAnnotationToEdit(modalContent)}
         match={match}
         filterAnnotations={filterAnnotations}
         removeAnnotation={removeAnnotation}

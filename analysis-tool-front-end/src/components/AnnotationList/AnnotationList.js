@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import AnnotationListFilterModal from './AnnotationListFilterModal';
 import AnnotationListActions from './AnnotationListActions';
 import AnnotationListTable from './AnnotationListTable';
+import { deleteAllAnnotations, deleteAnnotation, editAnnotation, getAnnotations } from './helpers';
 
 export default function AnnotationList({
   baseUrl,
@@ -42,50 +42,52 @@ export default function AnnotationList({
     ),
   ];
 
+  /**
+   * Handles removing an annotation.
+   *
+   * @param annotationId - The ID of the annotation to remove
+   * @param matchId - The ID of the match the annotation belongs to
+   * @returns void
+   */
+  const handleDeleteAnnotation = useCallback(async (annotationId, matchId) => {
+    const isSuccess = await deleteAnnotation({ annotationId, matchId });
+
+    if (isSuccess) {
+      setAnnotationToRemove({});
+      annotationsUpdated();
+    }
+  }, [annotationsUpdated]);
+
+
+  /**
+   * Handles editing an annotation.
+   * 
+   * @param {any} annotationToEdit - The annotation to edit
+   * @param {string} matchId - The ID of the match the annotation belongs to
+   * @returns void
+   */
+  const handleEditAnnotation = useCallback(async (annotationToEdit, matchId) => {
+    const isSuccess = await editAnnotation({ annotationToEdit, matchId });
+
+    if (isSuccess) {
+      setAnnotationToEdit({});
+      annotationsUpdated();
+    }
+  }, [annotationsUpdated]);
+
   useEffect(() => {
     setFilterAnnotations(annotations);
 
-    if (Object.entries(annotationToRemove).length !== 0) {
-      axios
-        .post(
-          baseUrl +
-            '/annotate/' +
-            match.id +
-            '/' +
-            annotationToRemove.id +
-            '/remove'
-        )
-        .then((res) => {
-          setAnnotationToRemove({});
-          annotationsUpdated();
-        });
+    if ('id' in annotationToRemove) {
+      handleDeleteAnnotation(annotationToRemove.id, match.id);
     }
-    if (Object.entries(annotationToEdit).length !== 0) {
-      const timeinSecs =
-        Number(annotationToEdit.timeTextH) * 3600 +
-        Number(annotationToEdit.timeTextM) * 60 +
-        Number(annotationToEdit.timeTextS);
-      annotationToEdit.annotation.timestamp = timeinSecs;
-      annotationToEdit.annotation.playerPos = annotationToEdit.playerPosition;
-      annotationToEdit.annotation.opponentPos =
-        annotationToEdit.opponentPosition;
 
-      axios
-        .post(
-          baseUrl +
-            '/annotate/' +
-            match.id +
-            '/' +
-            annotationToEdit.annotation.id +
-            '/edit',
-          annotationToEdit.annotation
-        )
-        .then((res) => {
-          setAnnotationToEdit({});
-          annotationsUpdated();
-        });
+    if ('id' in annotationToEdit) {
+      handleEditAnnotation(annotationToEdit, match.id);
     }
   }, [
+    handleEditAnnotation,
+    handleDeleteAnnotation,
     annotationToRemove,
     annotationToEdit,
     annotations,
@@ -107,26 +109,31 @@ export default function AnnotationList({
     });
   };
 
+
+  /**
+   * Fetches annotations for a given match.
+   * 
+   * @param matchId - The ID of the match to fetch annotations for
+   * @return void
+   */
+  const handleGetAnnotations = async (matchId) => {
+    const annotations = await getAnnotations(matchId);
+
+    if (annotations.length) {
+      setFilterAnnotations(annotations);
+    }
+  }
+
+
   useEffect(() => {
-    // Fetch annotations when the component mounts
-    const fetchAnnotations = async () => {
-      try {
-        const response = await axios.get(`${baseUrl}/annotate/${match.id}/all`);
-        setFilterAnnotations(response.data);
-      } catch (error) {
-        console.error('Error fetching annotations:', error);
-      }
-    };
+    handleGetAnnotations(match.id) // Fetch annotations when the component mounts
+  }, [match.id]);
 
-    fetchAnnotations();
-  }, [baseUrl, match.id]);
+  const handleClearAllAnnotations = async () => {
+    const isSuccess = await deleteAllAnnotations(match.id);
 
-  const handleClearAll = async () => {
-    try {
-      await axios.delete(`${baseUrl}/annotate/${match.id}/annotations/clear`);
+    if (isSuccess) {
       setFilterAnnotations([]); // Clear annotations in the state
-    } catch (error) {
-      console.error('Error clearing annotations:', error);
     }
   };
 
@@ -306,7 +313,7 @@ export default function AnnotationList({
     //This is the left hand side of the screen. The annotation log and resulting menus
     <div className="h-full flex flex-col">
       {/* Annotations Table - List of annotations */}
-      <AnnotationListTable 
+      <AnnotationListTable
         showModal={showModal}
         show={show}
         modalContent={modalContent}
@@ -323,7 +330,7 @@ export default function AnnotationList({
       {/* Filter, Statistics & Clear All buttons */}
       <AnnotationListActions
         id={match.id}
-        handleClearAll={handleClearAll}
+        handleClearAll={handleClearAllAnnotations}
         toggleFilter={toggleFilter}
       />
 
@@ -347,4 +354,3 @@ export default function AnnotationList({
     </div>
   );
 }
-

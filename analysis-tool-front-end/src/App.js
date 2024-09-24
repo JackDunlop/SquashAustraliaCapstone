@@ -14,42 +14,42 @@ import ViewAnalytics from './components/ViewAnalytics';
 //<Route path="/new/canvas">
 //<CanvasTest baseUrl={baseUrl} />
 //</Route>
-function App() {
-  const baseUrl = 'http://localhost:3001';
+import { BASE_URL } from './constants';
 
+function App() {
   return (
     <div className="App">
       <Navbar />
       <Router>
         <Route path="/home">
-          <MainMenu baseUrl={baseUrl} />
+          <MainMenu baseUrl={BASE_URL} />
         </Route>
         <Route exact path="/">
           <Redirect to="/home"></Redirect>
         </Route>
         <Route path="/new/match">
-          <NewMatch baseUrl={baseUrl} />
+          <NewMatch baseUrl={BASE_URL} />
         </Route>
         <Route path="/new/court">
-          <CourtBounds baseUrl={baseUrl} />
+          <CourtBounds baseUrl={BASE_URL} />
         </Route>
         <Route path="/new/colourPick">
-          <ColourPicker baseUrl={baseUrl} />
+          <ColourPicker baseUrl={BASE_URL} />
         </Route>
         <Route path="/match/:id">
-          <AnnotationInterface baseUrl={baseUrl} />
+          <AnnotationInterface baseUrl={BASE_URL} />
         </Route>
         <Route path="/view_video/:id">
-          <ViewVideo baseUrl={baseUrl} />
+          <ViewVideo baseUrl={BASE_URL} />
         </Route>
         <Route path="/analytics/:id">
-          <ViewAnalytics baseUrl={baseUrl} />
+          <ViewAnalytics baseUrl={BASE_URL} />
         </Route> 
         <Route path="/stats/:id">
-          <Statistics baseUrl={baseUrl} />
+          <Statistics baseUrl={BASE_URL} />
         </Route>
         <Route path="/all/stats">
-            <AllStatistics baseUrl={baseUrl} />
+            <AllStatistics baseUrl={BASE_URL} />
         </Route>
                
       </Router>

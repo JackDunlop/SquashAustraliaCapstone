@@ -93,3 +93,20 @@ export interface AnnotationListActionsProps {
   toggleFilter: () => void;
   handleClearAll: () => void;
 }
+
+export interface EditAnnotationProps {
+  annotationToEdit: {
+      annotation: Annotation;
+      timeTextH: number;
+      timeTextM: number;
+      timeTextS: number;
+      playerPosition: number;
+      opponentPosition: number;
+  };
+  matchId: string;
+}
+
+export interface deleteAnnotationProps {
+  annotationId: string;
+  matchId: string;
+}

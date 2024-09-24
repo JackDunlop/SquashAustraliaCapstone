@@ -34,12 +34,15 @@ export interface AnnotationListFilterProps {
     id: string;
     timestamp: number;
     playerNumber: number;
+    playerPos?: number;
+    opponentPos?: number;
   }
   
   export interface Component {
+    approach?: string;
     hand: string;
     id: string;
-    type: number;
+    type: string;
   }
   
   export interface FilterTime {
@@ -47,4 +50,22 @@ export interface AnnotationListFilterProps {
     startTimeS: number;
     endTimeM: number;
     endTimeS: number;
+  }
+
+  export interface AnnotationListItemProps {
+    annotation: Annotation;
+    showModal: (
+      id: string,
+      timestamp: number,
+      annotation: Annotation,
+      playerPos?: number,
+      opponentPos?: number
+    ) => void;
+    removeAnnotation: (annotation: Annotation) => void;
+    jumpToAnnotation: (
+      annotationTimeStamp: number,
+      filterAnnotations: Annotation[]
+    ) => void;
+    filterAnnotations: Annotation[];
+    gameZoneLabels: string[];
   }

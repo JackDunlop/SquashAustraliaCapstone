@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../Modal';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
-import { convertSecondsToMilliseconds } from '../../utils/convertSecondsToMilliseconds';
 import AnnotationListFilter from './AnnotationListFilter';
 import AnnotationListActions from './AnnotationListActions';
+import AnnotationListItem from './AnnotationListItem';
 
 export default function AnnotationList({
   baseUrl,
@@ -451,91 +449,24 @@ export default function AnnotationList({
                 </button>
               </div>
             </Modal>
-            {filterAnnotations.map((annotation) => {
-              return (
-                <tr
-                  className="hasTooltip text-center border-t-2 border-fuchsia-600"
-                  key={annotation.id}
-                >
-                  <td className="w-1/2">
-                    <div className="tooltip-container has-tooltip">
-                      <div className="overflow-hidden text-center">
-                        {annotation.components.id === 'New Game' && (
-                          <span className="grid place-items-center text-red-600 font-bold overflow-x-hidden w-full px-2">
-                            {annotation.components.id}
-                          </span>
-                        )}
-                        {(annotation.components.type === 'shot' ||
-                          annotation.components.type === 'score') &&
-                          annotation.playerNumber === 1 && (
-                            <span className="grid place-items-center bg-yellow-600 overflow-x-hidden w-full px-2">
-                              {annotation.components.id}
-                            </span>
-                          )}
-                        {(annotation.components.type === 'shot' ||
-                          annotation.components.type === 'score') &&
-                          annotation.playerNumber === 2 && (
-                            <span className="grid place-items-center bg-green-600 overflow-x-hidden w-full px-2">
-                              {annotation.components.id}
-                            </span>
-                          )}
-                        {annotation.components.type === 'rally' && (
-                          <span className="grid place-items-center overflow-x-hidden w-full px-2">
-                            {annotation.components.id}
-                          </span>
-                        )}
-                      </div>
-                      <div className="tooltip shadow-lg px-3 py-1 bg-blue-600 text-white">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            showModal(
-                              annotation.components.id,
-                              annotation.timestamp,
-                              annotation,
-                              annotation.playerPos,
-                              annotation.opponentPos
-                            );
-                          }}
-                        >
-                          <FontAwesomeIcon className="pr-1" icon={faEdit} />
-                          Edit{' '}
-                        </button>{' '}
-                        |
-                        <button
-                          type="button"
-                          className="pl-2"
-                          onClick={() => removeAnnotation(annotation)}
-                        >
-                          <FontAwesomeIcon icon={faTrash} /> Remove
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <button
-                      className="hover:text-blue-500"
-                      onClick={() =>
-                        jumpToAnnotation(
-                          annotation.timestamp,
-                          filterAnnotations
-                        )
-                      }
-                    >
-                      {convertSecondsToMilliseconds(annotation.timestamp)}
-                    </button>
-                  </td>
-                  <td>{gameZoneLabels[annotation.playerPos - 1]}</td>
-                  <td>{gameZoneLabels[annotation.opponentPos - 1]}</td>
-                </tr>
-              );
-            })}
+
+            {/* List of Annotations */}
+            {filterAnnotations.map((annotation) => (
+              <AnnotationListItem
+                annotation={annotation}
+                showModal={showModal}
+                removeAnnotation={removeAnnotation}
+                jumpToAnnotation={jumpToAnnotation}
+                gameZoneLabels={gameZoneLabels}
+                filterAnnotations={filterAnnotations}
+              />
+            ))}
           </tbody>
         </table>
       </div>
-      
+
       {/* Filter, Statistics & Clear All buttons */}
-      <AnnotationListActions 
+      <AnnotationListActions
         id={match.id}
         handleClearAll={handleClearAll}
         toggleFilter={toggleFilter}
@@ -560,4 +491,3 @@ export default function AnnotationList({
     </div>
   );
 }
-

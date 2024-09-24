@@ -2,8 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { AnnotationListFilterProps } from '../../types';
 
 export default function AnnotationListFilterModal({
-  player1IsChecked,
-  player2IsChecked,
+  isPlayerOneChecked,
+  isPlayerTwoChecked,
   checkedState,
   filterTime,
   playerFilterChange1,
@@ -30,7 +30,7 @@ export default function AnnotationListFilterModal({
                   <input
                     type="checkbox"
                     className="form-checkbox"
-                    checked={player1IsChecked}
+                    checked={isPlayerOneChecked}
                     name={match.players['player1']}
                     onChange={playerFilterChange1}
                   />
@@ -42,7 +42,7 @@ export default function AnnotationListFilterModal({
                     type="checkbox"
                     className="form-checkbox"
                     name={match.players['player2']}
-                    checked={player2IsChecked}
+                    checked={isPlayerTwoChecked}
                     onChange={playerFilterChange2}
                   />
                   <span className="ml-2">{match.players['player2']}</span>

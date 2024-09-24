@@ -1,6 +1,6 @@
 export interface AnnotationListFilterProps {
-  player1IsChecked: boolean;
-  player2IsChecked: boolean;
+  isPlayerOneChecked: boolean;
+  isPlayerTwoChecked: boolean;
   checkedState: boolean[];
   filterTime: FilterTime;
   playerFilterChange1: () => void;

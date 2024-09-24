@@ -28,6 +28,8 @@ export default function AnnotationList({
   });
   const [checkedState, setCheckedState] = useState(new Array(12).fill(false));
   const [modalContent, setModalContent] = useState({});
+  const [isPlayerOneChecked, setIsPlayerOneChecked] = useState(true);
+  const [isPlayerTwoChecked, setIsPlayerTwoChecked] = useState(true);
 
   const unique_shots = [
     ...new Set(
@@ -114,62 +116,74 @@ export default function AnnotationList({
   useEffect(() => {
     const fetchAndSetAnnotations = async () => {
       await handleGetAnnotations(match.id);
-      setFilterAnnotations(annotations); 
+      setFilterAnnotations(annotations);
     };
-  
+
     fetchAndSetAnnotations();
   }, [match.id, annotations]);
 
-  // I have no idea how this works other than the fact that it does
-  const [player1IsChecked, player1SetIsChecked] = useState(false);
-  const [player2IsChecked, player2SetIsChecked] = useState(false);
 
-  const playerFilterChange1 = () => {
-    if (!player1IsChecked && player2IsChecked) {
-      let newAnnotations = annotations.filter(
-        (annotation) =>
-          annotation.playerNumber === 1 || annotation.playerNumber === 2
-      );
-      setFilterAnnotations(newAnnotations);
-    } else if (!player1IsChecked) {
-      let newAnnotations = annotations.filter(
-        (annotation) => annotation.playerNumber === 1
-      );
-      setFilterAnnotations(newAnnotations);
-    } else if (player2IsChecked) {
-      let newAnnotations = annotations.filter(
-        (annotation) => annotation.playerNumber === 2
-      );
-      setFilterAnnotations(newAnnotations);
-    } else {
-      clearFilters();
-    }
-    player1SetIsChecked(!player1IsChecked);
-  };
-
-  const playerFilterChange2 = () => {
-    player2SetIsChecked(!player2IsChecked);
-
+  /**
+   * Handles filtering annotations by player number.
+   * 
+   * @param {boolean} player1Checked - Whether player 1 is checked
+   * @param {boolean} player2Checked - Whether player 2 is checked
+   * @returns void
+   */
+  const handleFilterAnnotations = (player1Checked, player2Checked) => {
     let newAnnotations = [...annotations];
-
-    if (player1IsChecked && !player2IsChecked) {
+  
+    if (player1Checked && player2Checked) {
       newAnnotations = annotations.filter(
         (annotation) =>
           annotation.playerNumber === 1 || annotation.playerNumber === 2
       );
-    } else if (player1IsChecked) {
+    } else if (player1Checked && !player2Checked) {
       newAnnotations = annotations.filter(
         (annotation) => annotation.playerNumber === 1
       );
-    } else if (!player2IsChecked) {
+    } else if (!player1Checked && player2Checked) {
       newAnnotations = annotations.filter(
         (annotation) => annotation.playerNumber === 2
       );
-    } else {
+    } else if (!player1Checked && !player2Checked) {
+      newAnnotations = annotations.filter(
+        (annotation) => annotation.playerNumber !== 1 && annotation.playerNumber !== 2
+      )
+    } 
+    else {
       clearFilters();
+      return;
+    }
+  
+    setFilterAnnotations(newAnnotations);
+  };
+  
+  /**
+   * Handles toggling the filter for a player.
+   * @TODO: Update the player argument to be an enum
+   * 
+   * @param {number} player - The player number to toggle the filter for
+   * @returns void
+   */
+  const handleTogglePlayerFilter = (player) => {
+    // Basic validation for the player number
+    if (typeof player !== 'number' || player < 1 || player > 2) {
+      console.error('Invalid player number provided');
+      return;
     }
 
-    setFilterAnnotations(newAnnotations);
+    if (player === 1) {
+      const newPlayer1IsChecked = !isPlayerOneChecked;
+      setIsPlayerOneChecked(newPlayer1IsChecked);
+      handleFilterAnnotations(newPlayer1IsChecked, isPlayerTwoChecked);
+    }
+    
+    if (player === 2) {
+      const newPlayer2IsChecked = !isPlayerTwoChecked;
+      setIsPlayerTwoChecked(newPlayer2IsChecked);
+      handleFilterAnnotations(isPlayerOneChecked, newPlayer2IsChecked);
+    }
   };
 
   const shotFilterChange = (position) => {
@@ -226,66 +240,41 @@ export default function AnnotationList({
     playerPosition,
     opponentPosition
   ) => {
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+
     if (shotText && timeText) {
-      const hours = Math.floor(timeText / 3600);
-      const minutes = Math.floor((timeText % 3600) / 60);
-      const seconds = Math.floor((timeText % 3600) % 60);
-
-      setModalContent({
-        annotation: annotation,
-        shotText: shotText,
-        timeTextH: hours,
-        timeTextM: minutes,
-        timeTextS: seconds,
-        playerPosition: playerPosition,
-        opponentPosition: opponentPosition,
-      });
-    } else {
-      const hours = 0;
-      const minutes = 0;
-      const seconds = 0;
-
-      setModalContent({
-        annotation: annotation,
-        shotText: shotText,
-        timeTextH: hours,
-        timeTextM: minutes,
-        timeTextS: seconds,
-        playerPosition: playerPosition,
-        opponentPosition: opponentPosition,
-      });
+      hours = Math.floor(timeText / 3600);
+      minutes = Math.floor((timeText % 3600) / 60);
+      seconds = Math.floor((timeText % 3600) % 60);
     }
+
+    setModalContent({
+      annotation: annotation,
+      shotText: shotText,
+      timeTextH: hours,
+      timeTextM: minutes,
+      timeTextS: seconds,
+      playerPosition: playerPosition,
+      opponentPosition: opponentPosition,
+    });
+
     setShow(!show);
   };
 
   const handleTimeChange = (event, timeTextX) => {
-    let newTime = modalContent;
-    newTime[timeTextX] = event.target.value;
-
-    setModalContent({
-      annotation: newTime['annotation'],
-      shotText: newTime.shotText,
-      timeTextH: newTime.timeTextH,
-      timeTextM: newTime.timeTextM,
-      timeTextS: newTime.timeTextS,
-      playerPosition: newTime.playerPosition,
-      opponentPosition: newTime.opponentPosition,
-    });
+    setModalContent((prevContent) => ({
+      ...prevContent,
+      [timeTextX]: event.target.value,
+    }));
   };
 
   const handleNewChange = (event, newText) => {
-    let newChange = modalContent;
-    newChange[newText] = event.target.value;
-
-    setModalContent({
-      annotation: newChange['annotation'],
-      shotText: newChange.shotText,
-      timeTextH: newChange.timeTextH,
-      timeTextM: newChange.timeTextM,
-      timeTextS: newChange.timeTextS,
-      playerPosition: newChange.playerPosition,
-      opponentPosition: newChange.opponentPosition,
-    });
+    setModalContent((prevContent) => ({
+      ...prevContent,
+      [newText]: event.target.value,
+    }));
   };
 
   return (
@@ -315,12 +304,12 @@ export default function AnnotationList({
       {/* Filter Modal */}
       {showFilter ? (
         <AnnotationListFilterModal
-          player1IsChecked={player1IsChecked}
-          player2IsChecked={player2IsChecked}
+          isPlayerOneChecked={isPlayerOneChecked}
+          isPlayerTwoChecked={isPlayerTwoChecked}
           checkedState={checkedState}
           filterTime={filterTime}
-          playerFilterChange1={playerFilterChange1}
-          playerFilterChange2={playerFilterChange2}
+          playerFilterChange1={() => handleTogglePlayerFilter(1)}
+          playerFilterChange2={() => handleTogglePlayerFilter(2)}
           match={match}
           unique_shots={unique_shots}
           shotFilterChange={shotFilterChange}

@@ -2,7 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import AnnotationListFilterModal from './AnnotationListFilterModal';
 import AnnotationListActions from './AnnotationListActions';
 import AnnotationListTable from './AnnotationListTable';
-import { deleteAllAnnotations, deleteAnnotation, editAnnotation, getAnnotations } from './helpers';
+import {
+  deleteAllAnnotations,
+  deleteAnnotation,
+  editAnnotation,
+  getAnnotations,
+} from './helpers';
 
 export default function AnnotationList({
   baseUrl,
@@ -49,31 +54,63 @@ export default function AnnotationList({
    * @param matchId - The ID of the match the annotation belongs to
    * @returns void
    */
-  const handleDeleteAnnotation = useCallback(async (annotationId, matchId) => {
-    const isSuccess = await deleteAnnotation({ annotationId, matchId });
+  const handleDeleteAnnotation = useCallback(
+    async (annotationId, matchId) => {
+      const isSuccess = await deleteAnnotation({ annotationId, matchId });
+
+      if (isSuccess) {
+        setAnnotationToRemove({});
+        annotationsUpdated();
+      }
+    },
+    [annotationsUpdated]
+  );
+
+  /**
+   * Fetches annotations for a given match.
+   *
+   * @param matchId - The ID of the match to fetch annotations for
+   * @return void
+   */
+  const handleGetAnnotations = async (matchId) => {
+    const annotations = await getAnnotations(matchId);
+
+    if (annotations.length) {
+      setFilterAnnotations(annotations);
+    }
+  };
+
+  /**
+   * Handles clearing all annotations.
+   *
+   * @return void
+   */
+  const handleClearAllAnnotations = async () => {
+    const isSuccess = await deleteAllAnnotations(match.id);
 
     if (isSuccess) {
-      setAnnotationToRemove({});
-      annotationsUpdated();
+      setFilterAnnotations([]); // Clear annotations in the state
     }
-  }, [annotationsUpdated]);
-
+  };
 
   /**
    * Handles editing an annotation.
-   * 
-   * @param {any} annotationToEdit - The annotation to edit
-   * @param {string} matchId - The ID of the match the annotation belongs to
+   *
+   * @param annotationToEdit - The annotation to edit
+   * @param matchId - The ID of the match the annotation belongs to
    * @returns void
    */
-  const handleEditAnnotation = useCallback(async (annotationToEdit, matchId) => {
-    const isSuccess = await editAnnotation({ annotationToEdit, matchId });
+  const handleEditAnnotation = useCallback(
+    async (annotationToEdit, matchId) => {
+      const isSuccess = await editAnnotation({ annotationToEdit, matchId });
 
-    if (isSuccess) {
-      setAnnotationToEdit({});
-      annotationsUpdated();
-    }
-  }, [annotationsUpdated]);
+      if (isSuccess) {
+        setAnnotationToEdit({});
+        annotationsUpdated();
+      }
+    },
+    [annotationsUpdated]
+  );
 
   useEffect(() => {
     setFilterAnnotations(annotations);
@@ -109,33 +146,9 @@ export default function AnnotationList({
     });
   };
 
-
-  /**
-   * Fetches annotations for a given match.
-   * 
-   * @param matchId - The ID of the match to fetch annotations for
-   * @return void
-   */
-  const handleGetAnnotations = async (matchId) => {
-    const annotations = await getAnnotations(matchId);
-
-    if (annotations.length) {
-      setFilterAnnotations(annotations);
-    }
-  }
-
-
   useEffect(() => {
-    handleGetAnnotations(match.id) // Fetch annotations when the component mounts
+    handleGetAnnotations(match.id); // Fetch annotations when the component mounts
   }, [match.id]);
-
-  const handleClearAllAnnotations = async () => {
-    const isSuccess = await deleteAllAnnotations(match.id);
-
-    if (isSuccess) {
-      setFilterAnnotations([]); // Clear annotations in the state
-    }
-  };
 
   // I have no idea how this works other than the fact that it does
   const [player1IsChecked, player1SetIsChecked] = useState(false);

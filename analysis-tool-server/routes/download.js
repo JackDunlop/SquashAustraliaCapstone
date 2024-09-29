@@ -54,31 +54,51 @@ const convertMsgpackToCsv = (msgpackFilePath, match_id, res) => {
     const readStream = fs.createReadStream(msgpackFilePath);
     const writeStream = fs.createWriteStream(outputPath);
 
-    let headerWritten = false; 
+    let headersWritten = false;
+    let keypointNames = [];
 
     readStream.pipe(msgpack.createDecodeStream())
         .on('data', (decodedChunk) => {
+            if (!headersWritten) {
          
+                const keypointNamesSet = new Set();
+                decodedChunk.forEach((data) => {
+                    Object.keys(data.keypoints).forEach(kptName => {
+                        keypointNamesSet.add(kptName);
+                    });
+                });
+                keypointNames = Array.from(keypointNamesSet);
+
+           
+                let headers = ['track_id', 'timestamp'];
+                keypointNames.forEach(kptName => {
+                    headers.push(`${kptName}_x`, `${kptName}_y`);
+                });
+                writeStream.write(headers.join(',') + '\n');
+                headersWritten = true;
+            }
+
+    
             decodedChunk.forEach((data) => {
                 const trackId = data.track_id;
                 const timestamp = data.timestamp;
                 const keypoints = data.keypoints;
+                const row = [trackId, timestamp];
 
-            
-                if (!headerWritten) {
-                    const headers = ['track_id', 'timestamp', ...Object.keys(keypoints)];
-                    writeStream.write(headers.join(',') + '\n');
-                    headerWritten = true;
-                }
+                keypointNames.forEach(kptName => {
+                    if (keypoints[kptName]) {
+                        row.push(keypoints[kptName][0], keypoints[kptName][1]);
+                    } else {
+                        row.push('', '');
+                    }
+                });
 
-      
-                const keypointValues = Object.values(keypoints).map(kpt => `${kpt[0]},${kpt[1]}`); 
-                writeStream.write([trackId, timestamp, ...keypointValues].join(',') + '\n');
+                writeStream.write(row.join(',') + '\n');
             });
         })
         .on('end', () => {
             writeStream.end(() => {
-                downloadFile(outputPath, res); 
+                downloadFile(outputPath, res);
             });
         })
         .on('error', (readError) => {

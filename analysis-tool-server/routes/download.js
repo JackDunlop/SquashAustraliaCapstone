@@ -45,6 +45,73 @@ const convertMsgpackToJson = (msgpackFilePath, match_id, res) => {
     });
 };
 
+const convertMsgpackToCsv = (msgpackFilePath, match_id, res) => {
+    const tempDir = path.join(`${__dirname}../../tempstorage/`);
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+    }
+    const outputPath = path.join(tempDir, `pose_data_${match_id}.csv`);
+    const readStream = fs.createReadStream(msgpackFilePath);
+    const writeStream = fs.createWriteStream(outputPath);
+
+    let headersWritten = false;
+    let keypointNames = [];
+
+    readStream.pipe(msgpack.createDecodeStream())
+        .on('data', (decodedChunk) => {
+            if (!headersWritten) {
+         
+                const keypointNamesSet = new Set();
+                decodedChunk.forEach((data) => {
+                    Object.keys(data.keypoints).forEach(kptName => {
+                        keypointNamesSet.add(kptName);
+                    });
+                });
+                keypointNames = Array.from(keypointNamesSet);
+
+           
+                let headers = ['track_id', 'timestamp'];
+                keypointNames.forEach(kptName => {
+                    headers.push(`${kptName}_x`, `${kptName}_y`);
+                });
+                writeStream.write(headers.join(',') + '\n');
+                headersWritten = true;
+            }
+
+    
+            decodedChunk.forEach((data) => {
+                const trackId = data.track_id;
+                const timestamp = data.timestamp;
+                const keypoints = data.keypoints;
+                const row = [trackId, timestamp];
+
+                keypointNames.forEach(kptName => {
+                    if (keypoints[kptName]) {
+                        row.push(keypoints[kptName][0], keypoints[kptName][1]);
+                    } else {
+                        row.push('', '');
+                    }
+                });
+
+                writeStream.write(row.join(',') + '\n');
+            });
+        })
+        .on('end', () => {
+            writeStream.end(() => {
+                downloadFile(outputPath, res);
+            });
+        })
+        .on('error', (readError) => {
+            fs.unlinkSync(outputPath);
+            res.status(500).json({ error: true, message: 'Error reading or decoding the input file.' });
+        });
+
+    writeStream.on('error', (writeError) => {
+        res.status(500).json({ error: true, message: 'Error writing the output file.' });
+    });
+};
+
+
 const downloadFile = async (folder, res) => {
     try {
         fs.access(folder, fs.constants.F_OK, (err) => {
@@ -83,17 +150,29 @@ router.get('/:match_id/:typeofdata', async (req, res) => {
 
    
     switch(typeofdata){
-        case "pose":
+        case "pose_json":
             // search poseEstimationData for file with match id
-            const poseFolder = "poseEstimationData";  
-            const filePosePath = await findFile(match_id, poseFolder);  
-            console.log(filePosePath);
-            if (!filePosePath) {
+            const poseFolderJson = "poseEstimationData";  
+            const filePosePathJson = await findFile(match_id, poseFolderJson);  
+            console.log(filePosePathJson);
+            if (!filePosePathJson) {
             return res.status(404).json({ error: true, message: 'File not found' });
             }
             // convert and create a temp folder of the binary folder to json
             // pass the converted files path to be downloaded instead of binary    
-            await convertMsgpackToJson(filePosePath, match_id, res); 
+            await convertMsgpackToJson(filePosePathJson, match_id, res); 
+        break;
+        case "pose_csv":
+            // search poseEstimationData for file with match id
+            const poseFolderCSV = "poseEstimationData";  
+            const filePosePathCSV = await findFile(match_id, poseFolderCSV);  
+            console.log(filePosePathCSV);
+            if (!filePosePathCSV) {
+            return res.status(404).json({ error: true, message: 'File not found' });
+            }
+            // convert and create a temp folder of the binary folder to json
+            // pass the converted files path to be downloaded instead of binary    
+            await convertMsgpackToCsv(filePosePathCSV, match_id, res); 
         break;
         case "jointangles":
             // search jointAngleCalculation for file with match id

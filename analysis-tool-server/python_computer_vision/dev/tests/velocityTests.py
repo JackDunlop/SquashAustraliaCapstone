@@ -231,11 +231,9 @@ def test_main_wrist_keypoints_zero_and_nonzero():
         mock_plot.assert_called_once()
         args, kwargs = mock_plot.call_args
         wristDataList = args[0]
-        # Verify that entries with [0,0] wrist points are skipped
         assert len(wristDataList) == 2
         assert wristDataList[0]['timestamp'] == '1s'
         assert wristDataList[1]['timestamp'] == '3s'
-        # Verify velocities
         delta_t = extract_numeric_time('3s') - extract_numeric_time('1s')
         expected_velocity = calculateVelocity([2, 2], [1, 1], delta_t)
         assert wristDataList[1]['velocity'] == pytest.approx(expected_velocity)

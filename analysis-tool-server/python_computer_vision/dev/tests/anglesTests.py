@@ -3,10 +3,10 @@ import os
 import cv2
 import msgpack
 
-# Adjust sys.path to include the parent directory
-current_dir = os.path.dirname(os.path.abspath(__file__))  # '.../dev/tests'
+
+current_dir = os.path.dirname(os.path.abspath(__file__))  
 parent_dir = os.path.dirname(current_dir)   
-sys.path.insert(0, parent_dir)  # Adds '.../dev' to sys.path
+sys.path.insert(0, parent_dir) 
 
 import pytest
 from unittest.mock import MagicMock, patch, mock_open

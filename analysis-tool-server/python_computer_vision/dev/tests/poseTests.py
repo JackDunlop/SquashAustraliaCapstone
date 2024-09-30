@@ -1,20 +1,19 @@
-# poseTests.py
 
 import sys
 import os
 import cv2
 
-# Adjust sys.path to include the parent directory
-current_dir = os.path.dirname(os.path.abspath(__file__))  # '.../dev/tests'
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)   
-sys.path.insert(0, parent_dir)  # Adds '.../dev' to sys.path
+sys.path.insert(0, parent_dir)  
 
 import pytest
 from unittest.mock import MagicMock, patch, mock_open
 import json
 import numpy as np
 
-# Now you can import from poseEstimation
+
 import poseEstimation
 from poseEstimation import (
     getMatchIDFromVideo,
@@ -28,7 +27,6 @@ from poseEstimation import (
     main
 )
 
-# Path to the test data folder
 TEST_DATA_FOLDER = os.path.join(current_dir, 'testData')
 
 # 1. Test if the initialiseVideoCapture function opens a valid video file correctly.
@@ -369,11 +367,6 @@ def test_load_pose_estimation_data_loads_correctly():
 
 # 11. Test if main handles missing command-line arguments correctly.
 def test_main_with_valid_arguments(capsys):
-    """
-    Test that the main function processes a video correctly when valid command-line arguments are provided.
-    It should call process_video and store_pose_estimation_data with the correct arguments,
-    and not exit the program.
-    """
     video_path = os.path.join(TEST_DATA_FOLDER, '66f93f9c728b890c58714882.mp4')
     test_args = ['poseEstimation.py', video_path]
     

@@ -14,6 +14,8 @@ def extract_numeric_time(timestamp):
     return float(numeric_part)
 
 def calculateVelocity(p1, p0, delta_t):
+    if delta_t == 0:
+        raise ZeroDivisionError("delta_t is zero, cannot calculate velocity")
     p1 = np.array(p1, dtype=float)
     p0 = np.array(p0, dtype=float)
     velocity = np.linalg.norm(p1 - p0) / delta_t

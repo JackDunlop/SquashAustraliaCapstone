@@ -762,313 +762,196 @@ export default function AllStatistics(props) {
     };
 
     return (
-        <div className="container mx-auto px-5 py-3">
-            <h2 className="text-2xl sm:text-3xl font-bold leading-7 text-gray-900 mb-5">
+        <div className="container mx-auto px-2 py-3">
+            <h2 className="text-xl sm:text-2xl font-bold leading-7 text-gray-900 mb-4">
                 <span className="align-middle">Match Statistics</span>
             </h2>
-            <div className="grid grid-cols-16">
-                <div className="col-span-3">
-                    <h3 className="font-bold text-lg mb-1 text-left">
-                        Filter by Player
-                    </h3>
-
-                    {uniquePlayers.map((player, index) => {
-                        return (
-                            <>
-                                <div key={player}>
-                                    <label className="block">
-                                        <input
-                                            type="checkbox"
-                                            className="form-checkbox"
-                                            checked={filterStatus[index]}
-                                            onChange={() => filterChange(index, player)}
-                                        />
-                                        <span className="ml-2">{player}</span>
-                                    </label>
-                                </div>
-                            </>
-                        );
-                    })}
+    
+            <div className="grid grid-cols-12 gap-4 mb-6">
+                {/* Filter by Player */}
+                <div className="col-span-12 sm:col-span-2">
+                    <h3 className="font-bold text-sm mb-2 text-left">Filter by Player</h3>
+                    {uniquePlayers.map((player, index) => (
+                        <div key={player}>
+                            <label className="block text-xs">
+                                <input
+                                    type="checkbox"
+                                    className="form-checkbox"
+                                    checked={filterStatus[index]}
+                                    onChange={() => filterChange(index, player)}
+                                />
+                                <span className="ml-2">{player}</span>
+                            </label>
+                        </div>
+                    ))}
                 </div>
-                <div className="col-span-3">
-                    <h3 className="font-bold text-lg mb-1 text-left">
-                        Filter by Game Session
-                    </h3>
-
-                    {gameTitles.map((title, index) => {
-                        return (
-                            <>
-                                <div key={title}>
-                                    <label className="block">
-                                        <input
-                                            type="checkbox"
-                                            className="form-checkbox"
-                                            checked={filterStatus[index + uniquePlayers.length]}
-                                            onChange={() => filterChange(index + uniquePlayers.length, title)}
-                                        />
-                                        <span className="ml-2">{title}</span>
-                                    </label>
-                                </div>
-                            </>
-                        );
-                    })}
+    
+                {/* Filter by Game Session */}
+                <div className="col-span-12 sm:col-span-2">
+                    <h3 className="font-bold text-sm mb-2 text-left">Filter by Game Session</h3>
+                    {gameTitles.map((title, index) => (
+                        <div key={title}>
+                            <label className="block text-xs">
+                                <input
+                                    type="checkbox"
+                                    className="form-checkbox"
+                                    checked={filterStatus[index + uniquePlayers.length]}
+                                    onChange={() => filterChange(index + uniquePlayers.length, title)}
+                                />
+                                <span className="ml-2">{title}</span>
+                            </label>
+                        </div>
+                    ))}
                 </div>
-                <div className="col-span-3">
-                    <h3 className="font-bold text-lg mb-1 text-left">
-                        Filter by Shot Type
-                    </h3>
-
-                    {uniqueShots.map((shot, index) => {
-                        return (
-                            <>
-                                <div key={shot}>
-                                    <label className="block">
-                                        <input
-                                            type="checkbox"
-                                            className="form-checkbox"
-                                            checked={filterStatus[index + uniquePlayers.length + gameTitles.length]}
-                                            onChange={() => filterChange(index + uniquePlayers.length + gameTitles.length, shot)}
-                                        />
-                                        <span className="ml-2">{shot}</span>
-                                    </label>
-                                </div>
-                            </>
-                        );
-                    })}
+    
+                {/* Filter by Shot Type */}
+                <div className="col-span-12 sm:col-span-2">
+                    <h3 className="font-bold text-sm mb-2 text-left">Filter by Shot Type</h3>
+                    {uniqueShots.map((shot, index) => (
+                        <div key={shot}>
+                            <label className="block text-xs">
+                                <input
+                                    type="checkbox"
+                                    className="form-checkbox"
+                                    checked={filterStatus[index + uniquePlayers.length + gameTitles.length]}
+                                    onChange={() => filterChange(index + uniquePlayers.length + gameTitles.length, shot)}
+                                />
+                                <span className="ml-2">{shot}</span>
+                            </label>
+                        </div>
+                    ))}
                 </div>
-                <div className="col-span-3">
-                    <h3 className="font-bold text-lg mb-1 text-left">
-                        Filter by Player Position
-                    </h3>
-
-                    {gameZoneLabels.map((zone, index) => {
-                        return (
-                            <>
-                                <div key={zone}>
-                                    <label className="block">
-                                        <input
-                                            type="checkbox"
-                                            className="form-checkbox"
-                                            checked={filterStatus[index + uniquePlayers.length + gameTitles.length + uniqueShots.length]}
-                                            onChange={() => filterChange(index + uniquePlayers.length + gameTitles.length + uniqueShots.length, zone)}
-                                        />
-                                        <span className="ml-2">{zone}</span>
-                                    </label>
-                                </div>
-                            </>
-                        );
-                    })}
+    
+                {/* Filter by Player Position */}
+                <div className="col-span-12 sm:col-span-2">
+                    <h3 className="font-bold text-sm mb-2 text-left">Filter by Player Position</h3>
+                    {gameZoneLabels.map((zone, index) => (
+                        <div key={zone}>
+                            <label className="block text-xs">
+                                <input
+                                    type="checkbox"
+                                    className="form-checkbox"
+                                    checked={filterStatus[index + uniquePlayers.length + gameTitles.length + uniqueShots.length]}
+                                    onChange={() => filterChange(index + uniquePlayers.length + gameTitles.length + uniqueShots.length, zone)}
+                                />
+                                <span className="ml-2">{zone}</span>
+                            </label>
+                        </div>
+                    ))}
                 </div>
-                <div className="col-span-3">
-                    <h3 className="font-bold text-lg mb-1 text-left">
-                        Filter by Game Won By
-                    </h3>
-
-                    {uniquePlayers.map((player, index) => {
-                        return (
-                            <>
-                                <div key={player}>
-                                    <label className="block">
-                                        <input
-                                            type="checkbox"
-                                            className="form-checkbox"
-                                            checked={filterStatus[index + uniquePlayers.length + gameTitles.length + uniqueShots.length
-                                                + gameZoneLabels.length]}
-                                            onChange={() => filterChange(index + uniquePlayers.length + gameTitles.length + uniqueShots.length
-                                                + gameZoneLabels.length, player)}
-                                        />
-                                        <span className="ml-2">{player}</span>
-                                    </label>
-                                </div>
-                            </>
-                        );
-                    })}
+    
+                {/* Filter by Game Won By */}
+                <div className="col-span-12 sm:col-span-2">
+                    <h3 className="font-bold text-sm mb-2 text-left">Filter by Game Won By</h3>
+                    {uniquePlayers.map((player, index) => (
+                        <div key={player}>
+                            <label className="block text-xs">
+                                <input
+                                    type="checkbox"
+                                    className="form-checkbox"
+                                    checked={filterStatus[index + uniquePlayers.length + gameTitles.length + uniqueShots.length + gameZoneLabels.length]}
+                                    onChange={() => filterChange(index + uniquePlayers.length + gameTitles.length + uniqueShots.length + gameZoneLabels.length, player)}
+                                />
+                                <span className="ml-2">{player}</span>
+                            </label>
+                        </div>
+                    ))}
                 </div>
-                <div className="col-span-8">
-                    <Bar
-                        data={shotCountChart}
-                        options={{
-                            legend: {
-                                display: false,
-                            },
-                            scales: {
-                                yAxes: [
-                                    {
-                                        ticks: {
-                                            max: shotCount.maxY,
-                                            min: 0,
-                                            stepSize: 1,
-                                        },
-                                    },
-                                ],
-                            },
-                            title: {
-                                display: true,
-                                text: shotCountChart.title,
-                                fontSize: 18,
-                            },
-                        }}
-                    />
-                </div>
-
-                <div className="col-span-8">
-                    <Pie
-                        data={handCountChart}
-                        options={{
-                            legend: {
-                                display: false,
-                            },
-
-                            title: {
-                                display: true,
-                                text: handCountChart.title,
-                                fontSize: 18,
-                            },
-                        }}
-                    />
-                </div>
-
-                <div className="col-span-8">
-                    <Pie
-                        data={playerShotsCountChart}
-                        options={{
-                            legend: {
-                                display: false,
-                            },
-
-                            title: {
-                                display: true,
-                                text: playerShotsCountChart.title,
-                                fontSize: 18,
-                            },
-                        }}
-                    />
-                </div>
-
-                <div className="col-span-8">
-                    <Pie
-                        data={shotWinCountChart}
-                        options={{
-                            legend: {
-                                display: false,
-                            },
-
-                            title: {
-                                display: true,
-                                text: shotWinCountChart.title,
-                                fontSize: 18,
-                            },
-                        }}
-                    />
-                </div>
-
-                <div className="col-span-8">
-                    <Pie
-                        data={shotErrorCountChart}
-                        options={{
-                            legend: {
-                                display: false,
-                            },
-
-                            title: {
-                                display: true,
-                                text: shotErrorCountChart.title,
-                                fontSize: 18,
-                            },
-                        }}
-                    />
-                </div>
-
-                <div className="col-span-8" style={squareStyle}>
-                    <h3 className="font-bold text-lg mb-1 text-left">
-                        Heat Map: Shots by Location
-                    </h3>
-                    <canvas id="canvas" width="300" height="400"></canvas>
-                </div>
-
-                <div className="col-span-12 mt-10">
-                    <Bar
-                        data={{
-                            labels: labelData,
-                            datasets: fullGamesDataset,
-                        }}
-                        options={{
-                            title: {
-                                display: true,
-                                text: 'Shot Count per Game',
-                                fontSize: 18,
-                            },
-                            scales: {
-                                xAxes: [
-                                    {
-                                        display: true,
-                                        gridLines: {
-                                            display: true,
-                                            color: 'red',
-                                            lineWidth: 5,
-                                            drawBorder: false,
-                                        },
-                                        ticks: {
-                                            padding: 5,
-                                        },
-                                    },
-                                ],
-                                yAxes: [
-                                    {
-                                        ticks: {
-                                            max: shotCount.maxY,
-                                            min: 0,
-                                            stepSize: 1,
-                                        },
-                                    },
-                                ],
-                            },
-                        }}
-                    />
-                </div>
-
-                <div className="col-span-12 mt-10">
-                    <Bar
-                        data={{
-                            labels: opponentPositionLabels,
-                            datasets: fullOpponentPositionDataset,
-                        }}
-                        options={{
-                            title: {
-                                display: true,
-                                text: 'Shot Count per Opponent Position',
-                                fontSize: 18,
-                            },
-                            scales: {
-                                xAxes: [
-                                    {
-                                        display: true,
-                                        gridLines: {
-                                            display: true,
-                                            color: 'red',
-                                            lineWidth: 5,
-                                            drawBorder: false,
-                                        },
-                                        ticks: {
-                                            padding: 5,
-                                        },
-                                    },
-                                ],
-                                yAxes: [
-                                    {
-                                        ticks: {
-                                            max: shotCount.maxY,
-                                            min: 0,
-                                            stepSize: 1,
-                                        },
-                                    },
-                                ],
-                            },
-                        }}
-                    />
-                </div>
-
             </div>
+    
+            <div className="grid grid-cols-12 gap-4">
+                {/* Bar Charts Column */}
+                <div className="col-span-12 lg:col-span-6">
+                    <div className="mb-10">
+                        <Bar
+                            data={shotCountChart}
+                            options={{
+                                legend: { display: false },
+                                scales: {
+                                    yAxes: [{ ticks: { fontColor: '#000', max: shotCount.maxY, min: 0, stepSize: 1 } }],
+                                },
+                                title: { display: true, text: shotCountChart.title, fontSize: 16, fontStyle: 'bold', fontColor: '#000' },
+                            }}
+                        />
+                    </div>
+                    
+                    <div className="mb-10">
+                        <Bar
+                            data={{ labels: labelData, datasets: fullGamesDataset }}
+                            options={{
+                                title: { display: true, text: 'Shot Count per Game', fontSize: 16, fontStyle: 'bold', fontColor: '#000' },
+                                scales: {
+                                    xAxes: [{ display: true, gridLines: { display: true, color: 'red', lineWidth: 2 } }],
+                                    yAxes: [{ ticks: { fontColor: '#000', max: shotCount.maxY, min: 0, stepSize: 1 } }],
+                                },
+                            }}
+                        />
+                    </div>
+    
+                    <div className="mb-10">
+                        <Bar
+                            data={{ labels: opponentPositionLabels, datasets: fullOpponentPositionDataset }}
+                            options={{
+                                title: { display: true, text: 'Shot Count per Opponent Position', fontSize: 16, fontStyle: 'bold', fontColor: '#000' },
+                                scales: {
+                                    xAxes: [{ display: true, gridLines: { display: true, color: '#000', lineWidth: 2 } }],
+                                    yAxes: [{ ticks: { fontColor: '#000', max: shotCount.maxY, min: 0, stepSize: 1 } }],
+                                },
+                            }}
+                        />
+                    </div>
+
+                    {/* Heat Map */}
+                    <div className="mt-10">
+                        <h3 className="font-bold text-md mb-2 text-left">Heat Map: Shots by Location</h3>
+                        <canvas id="canvas" width="300" height="400"></canvas>
+                    </div>
+                </div>
+    
+                {/* Pie Charts */}
+                <div className="col-span-12 lg:col-span-6">
+                    <div className="mb-10">
+                        <Pie
+                            data={handCountChart}
+                            options={{
+                                legend: { display: false },
+                                title: { display: true, text: handCountChart.title, fontSize: 16, fontStyle: 'bold', fontColor: '#000' },
+                            }}
+                        />
+                    </div>
+    
+                    <div className="mb-10">
+                        <Pie
+                            data={playerShotsCountChart}
+                            options={{
+                                legend: { display: false },
+                                title: { display: true, text: playerShotsCountChart.title, fontSize: 16, fontStyle: 'bold', fontColor: '#000' },
+                            }}
+                        />
+                    </div>
+    
+                    <div className="mb-10">
+                        <Pie
+                            data={shotWinCountChart}
+                            options={{
+                                legend: { display: false },
+                                title: { display: true, text: shotWinCountChart.title, fontSize: 16, fontStyle: 'bold', fontColor: '#000' },
+                            }}
+                        />
+                    </div>
+    
+                    <div className="mb-10">
+                        <Pie
+                            data={shotErrorCountChart}
+                            options={{
+                                legend: { display: false },
+                                title: { display: true, text: shotErrorCountChart.title, fontSize: 16, fontStyle: 'bold', fontColor: '#000' },
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+    
         </div>
     );
 }

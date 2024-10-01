@@ -79,6 +79,13 @@ def saveData(dataPath, angleDataList):
     with open(filesave, 'w') as f:
         json.dump(angleDataList, f, indent=2)
 
+def print_progress(current, total):
+  
+    fraction = current / total
+    percentage = round(fraction * 100)
+    print(percentage)
+    
+
 def main():
     dataPath = sys.argv[1]
     
@@ -92,6 +99,8 @@ def main():
     ]
     
     angleDataList = []
+    total_entries = len(data)
+    processed_entries = 0
 
     for entry in data:
         extractedData = {}
@@ -111,6 +120,9 @@ def main():
                 "timestamp": entry['timestamp'], 
                 'angles': extractedData
             })
+               
+        processed_entries += 1
+        #print_progress(processed_entries, total_entries)
 
     saveData(dataPath, angleDataList)
     

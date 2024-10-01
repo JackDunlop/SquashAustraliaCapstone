@@ -56,7 +56,6 @@ def store_pose_estimation_data(frameData, videoPath):
     output_dir = os.path.join(script_dir, '..', '..', 'poseEstimationData')
     os.makedirs(output_dir, exist_ok=True)
     filesave = os.path.join(output_dir, f'{match_id}.msgpack')
-          
     with open(filesave, 'wb') as f:
         packed_data = msgpack.packb(frameData, use_bin_type=True)
         f.write(packed_data)
@@ -68,6 +67,7 @@ def videoWriter(cap,videoPath,model,confThresh,modelClass):
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)    
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
     os.makedirs(output_dir, exist_ok=True)
@@ -76,21 +76,30 @@ def videoWriter(cap,videoPath,model,confThresh,modelClass):
     fourcc = cv2.VideoWriter_fourcc(*'H264')    # Use MJPG for speed
     out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
     frameData = []
+    processed_frames = 0
     while True:
         ret, frame = cap.read()
         if not ret:
             break
-        resized_frame = cv2.resize(frame, (320, 320)) 
         frameTimestamp = getFrameTimestamp(cap)        
         detection = getDetection(model, frame, confThresh, modelClass)
         if detection is None:
+            processed_frames += 1
+            #print_progress(processed_frames, total_frames)
             continue        
-        # Process the detection and store it in frameData
         processDetection(detection, frameTimestamp, frameData, frame)        
-        out.write(frame)    
-    # Release VideoWriter
+        out.write(frame)
+        processed_frames += 1
+        #print_progress(processed_frames, total_frames)
     out.release()
     return frameData
+
+
+def print_progress(current, total):
+    fraction = current / total
+    percentage = round(fraction * 100)
+    print(percentage, flush = True)
+    
     
 
 def initialiseVideoCapture(videoPath):

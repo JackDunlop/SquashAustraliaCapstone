@@ -129,7 +129,7 @@ def test_saveData():
 
         # Construct the expected absolute path
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        output_dir = os.path.join('..', '..',   'jointAngleCalculation')
+        output_dir = os.path.join('..', '..', '..',   'jointAngleCalculation')
         expected_filesave = os.path.join(output_dir, '66f93f9c728b890c58714882.json')
 
         assert os.path.abspath(opened_file_path) == os.path.abspath(expected_filesave)

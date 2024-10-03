@@ -54,7 +54,13 @@ const findVideoFileMatchID = async (match_id) => {
   }
   return '';
 }
-
+const findposeVideoFileMatchID = async (match_id) => {
+  for (let videoFileFormat of videoFileFormats) {
+    let _path = path.join(__dirname, '../poseOutputVideo', `${match_id}.${videoFileFormat}`);    
+    if (fs.existsSync(_path)) return _path;
+  }
+  return '';
+}
 const dataFileFormats = ['json','msgpack'];
 const findDataFileMatchID = async (match_id) => {
   for (let fileFormat of dataFileFormats) {
@@ -63,23 +69,7 @@ const findDataFileMatchID = async (match_id) => {
   }
   return '';
 }
-// upload video
-const upload = async (req, res, next) => {
-  if (req.files && req.files.video) {
-    const _path = path.join(
-      `${__dirname}../../poseOutputVideo/${req.params.match_id}.${util.getVideoFileFormat(req.files.video.mimetype)}`
-    );
-    try {
-      const result = await util.handleFileUpload(req.files.video, _path);
-      res.status(200).json(result);
-    } catch (err) {
-      console.log('err', err);
-      res.status(400).json(err.message);
-    }
-  } else {
-    res.status(400).json('No video file provided.');
-  }
-};
+
 const stream = async (req, res, next) => {
   const range = req.headers.range;
   
@@ -151,7 +141,7 @@ const createMapLayout = async (req, res) => {
           return res.status(500).json({ message: 'Error finding data file', error: Error.message });
       }
       try {            
-          const videoFilePath = await findVideoFileMatchID(match_id);
+          const videoFilePath = await findposeVideoFileMatchID(match_id);
           if (!videoFilePath) {
               return res.status(400).json({ message: 'Video file not found' });
           }
@@ -166,11 +156,12 @@ const createMapLayout = async (req, res) => {
     }
 };
 
-module.exports = {
-  upload,
+
+module.exports = {  
   stream,
   findVideoFileMatchID,
   findDataFileMatchID,
   createMapLayout,
-  runPythonScript  
+  runPythonScript,
+  findposeVideoFileMatchID 
 };

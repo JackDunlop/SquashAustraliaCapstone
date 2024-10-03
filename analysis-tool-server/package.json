@@ -25,6 +25,7 @@
     "helmet": "^4.6.0",
     "http-errors": "^1.6.3",
     "https": "^1.0.0",
+    "i": "^0.3.7",
     "jade": "~1.11.0",
     "jest": "^27.3.1",
     "joi": "^17.4.2",
@@ -32,7 +33,9 @@
     "mongodb": "4.0",
     "mongoose": "^5.13.3",
     "morgan": "~1.9.1",
+    "msgpack-lite": "^0.1.26",
     "nodemon": "^2.0.12",
+    "npm": "^10.8.3",
     "swagger-ui-express": "^4.1.6",
     "uuid": "^8.3.2"
   },

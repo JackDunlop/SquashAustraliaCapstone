@@ -7,8 +7,8 @@ const axios = require('axios').default;
 const baseURL = "http://localhost:3001/";
 
 function ColourPick(props) {
-  const [color1, setColor1] = useState('#006F3A');
-  const [color2, setColor2] = useState('#EBC015');
+  const [color1, setColor1] = useState('');
+  const [color2, setColor2] = useState('');
   const [playerOneColourRGB, setPlayerOneColourRGB] = useState([]);
   const [playerTwoColourRGB, setPlayerTwoColourRGB] = useState([]);
   const [image, setImage] = useState(null);
@@ -19,7 +19,8 @@ function ColourPick(props) {
     console.log("Players array:", props.players);
   }, []);
 
-
+  const player1 = props.players.player1.firstName;
+  const player2 = props.players.player2.firstName;
   const videopath =  props.imagepath;
   const videoNameWithExtension = videopath.split('\\').pop(); 
   const videoName = videoNameWithExtension.split('.')[0];
@@ -96,81 +97,59 @@ function ColourPick(props) {
 
   return (
     <>
-     <button type="button" onClick={swapColors}>Swap Colors</button>
       <h1 className={styles.bigHeadererFile}>
-        <b>Player Selection</b>
+        <b>Player Colour Selection</b>
       </h1>
-      <div className={styles.ImageSelection}>
-        <h5>
-          <b>Choose Image By Selecting Below Text:</b>
-        </h5>
-        <div className={styles.formSectionImage}></div>
-      </div>
-      <div className={styles.Player1Selection}>
-        <div className={styles.formSectionText}>
-          <h5>
-            <b>Pick Player 1 Colour:</b>
-          </h5>
-          <button
-            type="button"
-            className={styles.openPickerButton}
-            onClick={() => selectPlayerColor(0, setColor1, props.rgbArray)}
-          >
-            Open Eyedropper
-          </button>
-        </div>
-
-        <div className={styles.formSectionText}>
-          <button
-            type="button"
-            className={styles.selectedColor}
-            style={{ background: color1 }}
-            onClick={() => copyColorToClipboard('First', color1)}
-          >
-            Copy Colour
-          </button>
-        </div>
-      </div>
-      <div className={styles.Player2Selection}>
-        <div className={styles.formSectionText}>
-          <h5>
-            <b>Pick Player 2 Colour:</b>
-          </h5>
-          <button
-            type="button"
-            className={styles.openPickerButton}
-            onClick={() => selectPlayerColor(1, setColor2, props.rgbArray)}
-          >
-            Open Eyedropper
-          </button>
-        </div>
-
-        <div className={styles.formSectionText}>
-          <button
-            type="button"
-            className={styles.selectedColor}
-            style={{ background: color2 }}
-            onClick={() => copyColorToClipboard('Second', color2)}
-          >
-            Copy Colour
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.absoluteDiv4}>
-        <div className={styles.rightColumn}>
+      <div className={styles.mainContent}>
+        <div className={styles.imageAndCanvas}>
           {image ? (
-            <>
-              <img src={image} alt="Working image" />
-              <div
-                style={{
-                  backgroundImage: `url(${image})`,
-                }}
-              />
-            </>
+            <img src={image} alt="Working image" />
           ) : (
             <canvas ref={canvasRef} width={1280} height={720}></canvas>
           )}
+        </div>
+
+        <div className={styles.selectionAndSwapContainer}>
+          <div className={styles.playerSelectionContainer}>
+
+            <div className={styles.Player1Selection}>
+              <div className={styles.formSectionText}>
+                <h5>
+                  <b> {player1} Colour:</b>
+                </h5>
+              </div>
+
+              <div className={styles.formSectionText}>
+                <button
+                  type="button"
+                  className={styles.selectedColor}
+                  style={{ background: color1 }}
+                  onClick={() => copyColorToClipboard('First', color1)}
+                >
+                  {color1 ? 'Copy Colour' : 'Loading'}
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.Player2Selection}>
+              <div className={styles.formSectionText}>
+                <h5>
+                  <b> {player2} Colour:</b>
+                </h5>
+              </div>
+              <div className={styles.formSectionText}>
+                <button
+                  type="button"
+                  className={styles.selectedColor}
+                  style={{ background: color2 }}
+                  onClick={() => copyColorToClipboard('Second', color2)}
+                >
+                  {color2 ? 'Copy Colour' : 'Loading'}
+                </button>
+              </div>
+            </div>
+          </div>
+          <button type="button" onClick={swapColors} className={styles.swapButton}>Swap Colours</button>
         </div>
       </div>
     </>
@@ -194,9 +173,11 @@ class ColourPicker extends React.Component {
     return error;
   };
 
-  handleSubmit = (event) => {
+  handleSubmit = async (event) => {
     let form_error = this.formValidation();
     event.preventDefault();
+    const baseUrl = this.props.baseUrl;
+    const from = this.state.value.from;
     const players = this.state.value.player;
     const title = this.state.value.title;
     const duration = this.state.value.duration;
@@ -208,28 +189,32 @@ class ColourPicker extends React.Component {
     formData.append('video', video);
     
    // fsExtra.emptyDir(path.join(`${__dirname}../../tempstorage`)); need to do in here somewhere
-    if (!form_error) {
-      axios
-        .post(this.props.baseUrl + '/match/new', {
-          players,
-          title,
-          duration,
-          description,
-          courtBounds,
-          playerRGB,
-        })
-        .then((response) => {
-          axios.post(
-            this.props.baseUrl + '/video/' + response.data.match_id + '/upload',
-            formData
-          );
-        })
-        .then(
-          this.props.history.push({
-            pathname: '/home',
-            state: this.state.value.from,
-          })
-        );
+
+    if (form_error) {
+      console.error('Error occurred while creating a new match: Form validation');
+      return;
+    }
+
+    try {
+      const newMatchResponse = await axios.post(baseUrl + '/match/new', {
+        players,
+        title,
+        duration,
+        description,
+        courtBounds,
+        playerRGB,
+      });
+
+      if (!newMatchResponse || !newMatchResponse.data.match_id) {
+        throw new Error('Failed to create a new match');
+      };
+
+      await axios.post(baseUrl + '/video/' + newMatchResponse.data.match_id + '/upload', formData);
+
+      this.props.history.push({ pathname: '/home', state: from });
+    } catch (error) {
+      console.error('Error occurred while creating a new match:', error);
+      this.props.history.push({ pathname: '/home', state: from });
     }
   };
 

@@ -16,34 +16,32 @@ const runPythonScript = (res, scriptName, args = [], inn = null) => {
   if (inn) {
     pythonProcess.stdin.write(inn, 'utf-8', (err) => {
       if (err) {
-        console.error('Error writing to stdin:', err);
+    
         res.status(500).json({ message: 'Error writing to Python process', error: err.message });
       }      
       pythonProcess.stdin.end();
     });
   }
-  let stdoutData = '';
-  let stderrData = '';
-  pythonProcess.stdout.on('data', (data) => {
-      const output = data.toString();
-      stdoutData += output;
-      console.log(output);  // Log the output for debugging
-  });
-  pythonProcess.stderr.on('data', (data) => {
-      stderrData += data.toString();
-  });
+  // let stdoutData = '';
+  // let stderrData = '';
+  // pythonProcess.stdout.on('data', (data) => {
+  //     const output = data.toString();
+  //     stdoutData += output;
+  //     console.log('Python STDOUT:', output);
+  //     //res.write(`data: ${output}\n\n`);
+  // });
   pythonProcess.on('close', (code) => {
       if (code === 0) {
           console.log(`Script ${scriptName} executed successfully.`);
-          res.status(200).json({ message: 'Finished', output: stdoutData });
+          return res.status(200).json({ message: 'Finished' });
       } else {
-          console.error(`Script ${scriptName} failed with exit code ${code}: ${stderrData}`);
-          res.status(500).json({ message: 'Process failed', code: code, error: stderrData });
+
+          return res.status(500).json({ message: 'Process failed', code: code, error: stderrData });
       }
   });  
   pythonProcess.on('error', (err) => {
-      console.error(`Failed to start script ${scriptName}: ${err}`);
-      res.status(500).json({ message: 'Failed to start process', error: err.message });
+
+      return res.status(500).json({ message: 'Failed to start process', error: err.message });
   });
 };
 
@@ -137,7 +135,7 @@ const createMapLayout = async (req, res) => {
           return res.status(400).json({ message: 'Data file not found' });
       }
       } catch (Error) {
-          console.error(`Error finding data file for match ${match_id}: ${Error.message}`);
+      
           return res.status(500).json({ message: 'Error finding data file', error: Error.message });
       }
       try {            
@@ -147,11 +145,11 @@ const createMapLayout = async (req, res) => {
           }
           const runScript = runPythonScript(res,'heatmap.py',[courtDataPath,jsonPath,videoFilePath],courtLayout)          
       } catch (error) {
-          console.error(`Error finding video file for match ${match_id}: ${error.message}`);
+    
           res.status(500).json({ message: 'Error finding video file', error: error.message });
       } 
     } catch (error) {
-      console.error(`Unexpected error: ${error.message}`);
+ 
       res.status(500).json({ message: 'Unexpected error', error: error.message });
     }
 };

@@ -46,17 +46,6 @@ const handleFileUpload = (_file, path) => {
   );
 };
 
-const handleFileRemoval = (path) => {
-  return handle(
-    new Promise((resolve, reject) => {
-      fs.unlink(path, function (err) {
-        if (err) reject(new Error('Failed to remove file.'));
-        else resolve('File successfully removed.');
-      })
-    })
-  );
-};
-
 const getVideoFileFormat = (mimetype) => {
   return mimetype.slice(-3, mimetype.length)
 }
@@ -66,6 +55,5 @@ module.exports = {
   transformMatches,
   transformAnnotations,
   handleFileUpload,
-  handleFileRemoval,
   getVideoFileFormat,
 };

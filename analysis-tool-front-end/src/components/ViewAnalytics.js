@@ -76,8 +76,8 @@ return (
       <Player
         ref={playerRef}
         preload="auto"
-        fluid={false}
-        height="100%"
+        fluid={false}        
+        height='100%'
         src={videoUrl}
         onReady={() => setLoading(false)}
            // Fires when the video can start playing

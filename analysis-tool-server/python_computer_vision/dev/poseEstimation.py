@@ -31,20 +31,16 @@ def process_video(videoPath):
     # Initialize model
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.join(script_dir, '..','models')
-    output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')
-        
+    output_dir = os.path.join(script_dir, '..', '..', 'poseOutputVideo')       
 
     if not os.path.exists(models_dir):
         os.makedirs(models_dir)
     model_path = os.path.join(models_dir, 'yolov8s-pose.pt')
-    model = YOLO(model_path)
-    # Set configuration
-    confThresh = 0.80
-    modelClass = [0]
+    
     cap = initialiseVideoCapture(videoPath)
     if not cap:
         return None 
-    frameData = videoWriter(cap, videoPath, model, confThresh, modelClass)        
+    frameData = videoWriter(cap, videoPath, model_path)        
     cap.release()   
      
     return frameData
@@ -62,8 +58,11 @@ def store_pose_estimation_data(frameData, videoPath):
         f.write(packed_data)
     return match_id
 
-def videoWriter(cap,videoPath,model,confThresh,modelClass):
+def videoWriter(cap,videoPath,model_path):
     match_id = getMatchIDFromVideo(videoPath)
+    model = YOLO(model_path)    
+    confThresh = 0.80
+    modelClass = [0]
     # Capture video properties
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -75,23 +74,27 @@ def videoWriter(cap,videoPath,model,confThresh,modelClass):
     # Initialise VideoWriter
     fourcc = cv2.VideoWriter_fourcc(*'H264')    # Use MJPG for speed
     out = cv2.VideoWriter(filesave, fourcc, fps, (frame_width, frame_height))
-    frameData = []
+    frameData = []    
+
     while True:
         ret, frame = cap.read()
         if not ret:
-            break
-        resized_frame = cv2.resize(frame, (320, 320)) 
+            break        
+        #resized_frame = cv2.resize(frame, (320, 320))        
+        
         frameTimestamp = getFrameTimestamp(cap)        
         detection = getDetection(model, frame, confThresh, modelClass)
         if detection is None:
             continue        
         # Process the detection and store it in frameData
         processDetection(detection, frameTimestamp, frameData, frame)        
-        out.write(frame)    
+        out.write(frame)   
     # Release VideoWriter
     out.release()
     return frameData
-    
+
+
+
 
 def initialiseVideoCapture(videoPath):
     cap = cv2.VideoCapture(videoPath)

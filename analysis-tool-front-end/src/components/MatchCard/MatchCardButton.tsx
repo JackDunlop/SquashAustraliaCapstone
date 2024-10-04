@@ -443,8 +443,7 @@ export default function MatchCardButton({
                         <button
                           onClick={() => {
                             handleViewVelocity('left');
-                            setIsDropdownOpen(false);
-                            setIsVelocitySubmenuOpen(false);
+                          
                           }}
                           className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           role="menuitem"
@@ -473,8 +472,7 @@ export default function MatchCardButton({
                         <button
                           onClick={() => {
                             handleViewVelocity('right');
-                            setIsDropdownOpen(false);
-                            setIsVelocitySubmenuOpen(false);
+                         
                           }}
                           className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           role="menuitem"

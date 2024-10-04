@@ -62,12 +62,25 @@ router.get('/:match_id/stream', async (req, res) => {
        
 });
 
-// courtMap layout and size
-router.get('/generateMap/:match_id',
+router.get('/display2dMap/:match_id',
     handle(
       validate.params(matchIdSchema)
     ),
-    poseController.createMapLayout  
+    poseController.twoDMaps("display2dMap")  
+);
+
+router.get('/animated2dMap/:match_id',
+    handle(
+      validate.params(matchIdSchema)
+    ),
+    poseController.twoDMaps("animated2dMap")   
+);
+
+router.get('/visualizeHeatmap/:match_id',
+    handle(
+      validate.params(matchIdSchema)
+    ),
+    poseController.twoDMaps("visualizeHeatmap")   
 );
 
 module.exports = router;

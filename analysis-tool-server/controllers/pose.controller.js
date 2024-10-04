@@ -118,40 +118,43 @@ const stream = async (req, res, next) => {
   videoStream.pipe(res);
 };
 
-// Send courtBounds to heatmap.py
-const createMapLayout = async (req, res) => {
-  const match_id = req.params.match_id;  
-  try {
-    const [result, err] = await util.handle(Match.findById(match_id));
-    if (err || !result) {
-        return res.status(400).json('Failed to get match.');
-    }
-    const courtDataPath = path.join(__dirname, '../python_computer_vision/courtData.json');
-    const courtBounds = result.courtBounds;    
-    const courtLayout = JSON.stringify(courtBounds);
+// 2dmaps
+const twoDMaps = (mapType) => {  
+  return async (req, res) => {
+    const match_id = req.params.match_id;  
     try {
-      jsonPath = await findDataFileMatchID(match_id);
-      if (!jsonPath) {
-          return res.status(400).json({ message: 'Data file not found' });
+      const [result, err] = await util.handle(Match.findById(match_id));
+      if (err || !result) {
+          return res.status(400).json('Failed to get match.');
       }
-      } catch (Error) {
-      
-          return res.status(500).json({ message: 'Error finding data file', error: Error.message });
-      }
-      try {            
-          const videoFilePath = await findposeVideoFileMatchID(match_id);
-          if (!videoFilePath) {
-              return res.status(400).json({ message: 'Video file not found' });
-          }
-          const runScript = runPythonScript(res,'heatmap.py',[courtDataPath,jsonPath,videoFilePath],courtLayout)          
-      } catch (error) {
-    
+      const courtDataPath = path.join(__dirname, '../python_computer_vision/courtData.json');
+      const courtBounds = result.courtBounds;    
+      const courtLayout = JSON.stringify(courtBounds);
+      try {
+        jsonPath = await findDataFileMatchID(match_id);
+        if (!jsonPath) {
+            return res.status(400).json({ message: 'Data file not found' });
+        }
+        } catch (Error) {
+        
+            return res.status(500).json({ message: 'Error finding data file', error: Error.message });
+        }
+        try {            
+            const videoFilePath = await findposeVideoFileMatchID(match_id);
+            if (!videoFilePath) {
+                return res.status(400).json({ message: 'Video file not found' });
+            }
+            const runScript = runPythonScript(res,'2dMaps.py',[mapType,jsonPath,videoFilePath,courtDataPath],courtLayout)
+            return res.status(200).json({ message: `${mapType} map generation started` });        
+        } catch (error) {
+          console.error('Error finding video file:', error);       
           res.status(500).json({ message: 'Error finding video file', error: error.message });
-      } 
-    } catch (error) {
- 
-      res.status(500).json({ message: 'Unexpected error', error: error.message });
-    }
+        } 
+      } catch (error) {
+        console.error('Unexpected error:', error);    
+        res.status(500).json({ message: 'Unexpected error', error: error.message });
+      }
+  };
 };
 
 
@@ -159,7 +162,7 @@ module.exports = {
   stream,
   findVideoFileMatchID,
   findDataFileMatchID,
-  createMapLayout,
+  twoDMaps,
   runPythonScript,
   findposeVideoFileMatchID 
 };

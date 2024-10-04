@@ -9,7 +9,7 @@ const { matchIdSchema } = require('../validators/match.schemas');
 router.get('/:match_id', async (req, res) => {
     try {
         const match_id = req.params.match_id;
-        const dataFilePath = await poseController.findDataFileMatchID(match_id);
+        const dataFilePath = await poseController.findDataFileMatchID(match_id,"poseEstimationData");
         if (dataFilePath){
             return res.status(409).json({message: `Data Already stored for ${match_id}`})
         }
@@ -31,7 +31,7 @@ router.get('/velocity/:match_id/:hand', async (req, res) => {
     try {
         const match_id = req.params.match_id;
         const handType = req.params.hand;
-        const jsonPath = await poseController.findDataFileMatchID(match_id);
+        const jsonPath = await poseController.findDataFileMatchID(match_id,"poseEstimationData");
         if (!jsonPath) {
             return res.status(400).json({ message: 'Data file not found' });
         }
@@ -45,10 +45,14 @@ router.get('/velocity/:match_id/:hand', async (req, res) => {
 router.get('/angles/:match_id', async (req, res) => {
     try {
         const match_id = req.params.match_id;
-        const jsonPath = await poseController.findDataFileMatchID(match_id);
+        const jsonPath = await poseController.findDataFileMatchID(match_id,"poseEstimationData");
         if (!jsonPath) {
             return res.status(400).json({ message: 'Data file not found' });
-        }        
+        }    
+        const dataFilePath = await poseController.findDataFileMatchID(match_id,"jointAngleCalculation");
+        if (dataFilePath){
+            return res.status(409).json({message: `Data Already stored for ${match_id}`})
+        }
         runScript = poseController.runPythonScript(res,'jointangles.py',[jsonPath])
     } catch (error) {
      

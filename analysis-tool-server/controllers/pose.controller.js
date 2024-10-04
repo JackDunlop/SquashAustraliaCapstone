@@ -56,9 +56,9 @@ const findVideoFileMatchID = async (match_id) => {
 }
 
 const dataFileFormats = ['json','msgpack'];
-const findDataFileMatchID = async (match_id) => {
+const findDataFileMatchID = async (match_id, folderName) => {
   for (let fileFormat of dataFileFormats) {
-      let _path = path.join(__dirname, '../poseEstimationData', `${match_id}.${fileFormat}`);      
+      let _path = path.join(__dirname, `../${folderName}`, `${match_id}.${fileFormat}`);      
       if (fs.existsSync(_path)) return _path;
   }
   return '';
@@ -69,6 +69,7 @@ const upload = async (req, res, next) => {
     const _path = path.join(
       `${__dirname}../../poseOutputVideo/${req.params.match_id}.${util.getVideoFileFormat(req.files.video.mimetype)}`
     );
+    
     try {
       const result = await util.handleFileUpload(req.files.video, _path);
       res.status(200).json(result);
@@ -142,7 +143,7 @@ const createMapLayout = async (req, res) => {
     const courtBounds = result.courtBounds;    
     const courtLayout = JSON.stringify(courtBounds);
     try {
-      jsonPath = await findDataFileMatchID(match_id);
+      jsonPath = await findDataFileMatchID(match_id,poseEstimationData);
       if (!jsonPath) {
           return res.status(400).json({ message: 'Data file not found' });
       }

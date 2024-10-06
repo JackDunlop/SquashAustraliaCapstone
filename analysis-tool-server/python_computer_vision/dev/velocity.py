@@ -14,12 +14,11 @@ def extract_numeric_time(timestamp):
     return float(numeric_part)
 
 def calculateVelocity(p1, p0, delta_t):
-    # if delta_t == 0: // if you want tests to pass uncomment this.
-    #     raise ZeroDivisionError("delta_t is zero, cannot calculate velocity")
     p1 = np.array(p1, dtype=float)
     p0 = np.array(p0, dtype=float)
     velocity = np.linalg.norm(p1 - p0) / delta_t
     return velocity
+
 
 
 def plotVelocityAndSave(wristDataList, dataPath):
@@ -73,6 +72,11 @@ def playVideo(videoPath, wristDataList):
     cap.release()
     cv2.destroyAllWindows()
 
+def print_progress(current, total):
+    fraction = current / total
+    percentage = round(fraction * 100)
+    print(percentage)
+
 
 def main():
     dataPath = sys.argv[1]
@@ -82,6 +86,8 @@ def main():
         data = msgpack.unpack(f, raw=False)
 
     wristDataList = []
+    total_entries = len(data)  
+    processed_entries = 0   
     for entry in data:
         if leftOrRight in entry['keypoints']:
             wrist_point = entry['keypoints'][leftOrRight]
@@ -92,6 +98,8 @@ def main():
                     "wrist_point": wrist_point,
                     "velocity": 0
                 })
+        processed_entries += 1
+        #print_progress(processed_entries, total_entries) 
 
     for i in range(1, len(wristDataList)):
         p1 = wristDataList[i]["wrist_point"]

@@ -1,5 +1,6 @@
+// MatchCard.tsx
 import axios from 'axios';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MatchCardButton from './MatchCardButton';
 
 interface MatchCardProps {
@@ -32,6 +33,21 @@ export default function MatchCard({
   const [isPoseReady, setIsPoseReady] = useState(false);
   const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
 
+  useEffect(() => {
+    const checkPoseDataStatus = async () => {
+      try {
+        const response = await axios.get(`${baseUrl}/pose/status/${id}`);
+        if (response.status === 200 && response.data.poseReady) {
+          setIsPoseReady(true);
+        }
+      } catch (error) {
+        console.error(`Error checking pose data status for match ${id}:`, error);
+      }
+    };
+
+    checkPoseDataStatus();
+  }, [id, baseUrl]);
+
   const handleAnalyticsClick = async (matchId: string) => {
     setIsAnalyticsLoading(true);
 
@@ -43,11 +59,16 @@ export default function MatchCard({
       }
 
       setIsPoseReady(true);
-    } catch (error) {
-      console.error(
-        `Error fetching pose data or stream for match ${matchId}:`,
-        error
-      );
+    } catch (error: any) {
+      if (error.response && error.response.status === 409) {
+        console.log(`Pose data already processed for match ${matchId}`);
+        setIsPoseReady(true);
+      } else {
+        console.error(
+          `Error fetching pose data or stream for match ${matchId}:`,
+          error
+        );
+      }
     } finally {
       setIsAnalyticsLoading(false);
     }
@@ -56,21 +77,15 @@ export default function MatchCard({
   const buttons = [
     {
       label: 'View',
-      href: '/view_video/' + id,
+      href: `/view_video/${id}`,
       color: 'green',
       onClick: () => {},
     },
     {
       label: 'Edit',
-      href: '/match/' + id,
+      href: `/match/${id}`,
       color: 'blue',
       onClick: () => {},
-    },
-    {
-      label: isPoseReady ? 'Analytics Ready' : 'Analytics',
-      href: isPoseReady ? `/analytics/${id}` : '#',
-      color: isPoseReady ? 'purple' : 'purple',
-      onClick: () => handleAnalyticsClick(id),
     },
     {
       label: 'Remove',
@@ -82,13 +97,14 @@ export default function MatchCard({
 
   return (
     <div key={id} className="p-5 col-span-12 sm:col-span-6 lg:col-span-4">
-      <div className="overflow-hidden shadow-xl border-2 border-gray-100">
+      <div className="shadow-xl border-2 border-gray-100">
         <div className="p-4">
           <div className="font-bold text-xl mb-3">{title}</div>
           <video
-            src={baseUrl + '/video/' + id + '/stream'}
+            src={`${baseUrl}/video/${id}/stream`}
             muted
-            preload={'auto'}
+            preload="auto"
+            className="w-full h-auto"
           ></video>
           <p className="text-gray-700 mt-2 text-base">
             <strong>
@@ -96,25 +112,33 @@ export default function MatchCard({
             </strong>
           </p>
           <p className="whitespace-normal">{description}</p>
-          <div className="pt-3 pb-2">
-            {buttons.map((button) => {
-              return (
-                <MatchCardButton
-                  key={button.label}
-                  id={id}
-                  color={button.color}
-                  label={button.label}
-                  href={button.href}
-                  onClick={button.onClick}
-                  isPoseReady={isPoseReady}
-                  isAnalyticsLoading={isAnalyticsLoading}
-                />
-              );
-            })}
+          <div className="pt-3 pb-2 flex flex-wrap gap-2">
+    
+            {buttons.map((button) => (
+              <MatchCardButton
+                key={button.label}
+                id={id}
+                color={button.color}
+                label={button.label}
+                href={button.href}
+                onClick={button.onClick}
+                isPoseReady={isPoseReady}
+                isAnalyticsLoading={isAnalyticsLoading}
+              />
+            ))}
+
+            <MatchCardButton
+              id={id}
+              color="purple"
+              label="Analytics"
+              href="#"
+              onClick={() => handleAnalyticsClick(id)}
+              isPoseReady={isPoseReady}
+              isAnalyticsLoading={isAnalyticsLoading}
+            />
           </div>
         </div>
       </div>
     </div>
   );
 }
-

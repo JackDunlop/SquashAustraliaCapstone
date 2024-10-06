@@ -82,5 +82,4 @@ router.get('/visualizeHeatmap/:match_id',
     ),
     poseController.twoDMaps("visualizeHeatmap")   
 );
-
 module.exports = router;

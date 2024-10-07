@@ -24,6 +24,18 @@ export default function MatchCardButton({
 }: MatchCardButtonProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isPoseSubmenuOpen, setIsPoseSubmenuOpen] = useState(false);
+
+
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isMapOpenLoading2D, setMapOpenLoading2D] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+
+  const [isMapOpenLoading2DVideo, setMapOpenLoading2DVideo] = useState(false);
+  const [mapVideoReady, setMapVideoReady] = useState(false);
+  const [mapVideoError, setMapVideoError] = useState<string | null>(null);
+
+
   const [isVelocitySubmenuOpen, setIsVelocitySubmenuOpen] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [isAnglesLoading, setIsAnglesLoading] = useState(false);
@@ -40,6 +52,7 @@ export default function MatchCardButton({
   const [velocityReadyRight, setVelocityReadyRight] = useState(false);
   const [velocityErrorRight, setVelocityErrorRight] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -99,6 +112,55 @@ export default function MatchCardButton({
           setIsAnglesLoading(false);
         }
       };
+
+      const handleViewMap = async (hand: string) => {
+        if (hand === 'left') {
+          setIsVelocityLoadingLeft(true);
+          setVelocityErrorLeft(null);
+        } else {
+          setIsVelocityLoadingRight(true);
+          setVelocityErrorRight(null);
+        }
+
+        try {
+          const response = await axios.get(`http://localhost:3001/pose/velocity/${id}/${hand}`);
+          if (response.status === 200 || response.status === 409) {
+            if (hand === 'left') {
+              setVelocityReadyLeft(true);
+            } else {
+              setVelocityReadyRight(true);
+            }
+          } else {
+            if (hand === 'left') {
+              setVelocityErrorLeft('Failed to process velocity data');
+            } else {
+              setVelocityErrorRight('Failed to process velocity data');
+            }
+          }
+        } catch (error: any) {
+          if (error.response && error.response.status === 409) {
+            if (hand === 'left') {
+              setVelocityReadyLeft(true);
+            } else {
+              setVelocityReadyRight(true);
+            }
+          } else {
+            console.error(error);
+            if (hand === 'left') {
+              setVelocityErrorLeft(error.response?.data?.message || 'Error fetching velocity');
+            } else {
+              setVelocityErrorRight(error.response?.data?.message || 'Error fetching velocity');
+            }
+          }
+        } finally {
+          if (hand === 'left') {
+            setIsVelocityLoadingLeft(false);
+          } else {
+            setIsVelocityLoadingRight(false);
+          }
+        }
+      };
+   
 
       const handleViewVelocity = async (hand: string) => {
         if (hand === 'left') {
@@ -193,7 +255,6 @@ export default function MatchCardButton({
           setVideoError('Error downloading angles data');
         }
       };
-
       const handleDownloadVelocity = async (hand: string) => {
         try {
           const response = await axios.get(
@@ -224,6 +285,113 @@ export default function MatchCardButton({
         }
       };
 
+   // const [isMapOpen, setIsMapOpen] = useState(false);
+      // const [isMapOpenLoading2D, setMapOpenLoading2D] = useState(false);
+      // const [mapReady, setMapReady] = useState(false);
+      // const [mapError, setMapError] = useState<string | null>(null);
+    
+      const handle2dMap = async () => {
+        setMapOpenLoading2D(true);
+        setMapError(null);
+      try {
+        const response = await axios.get(`http://localhost:3001/pose/display2dMap/${id}`);
+        if (response.status === 200 || response.status === 409) {
+            setMapReady(true);
+        } 
+      } catch (error: any) {
+        if (error.response.status === 409) {
+            setMapReady(true);
+            
+        } else {
+            setMapError(error.response?.data?.message || 'Error fetching 2D map');
+        }
+      } finally {
+          setMapOpenLoading2D(false);
+      }
+    };
+
+      
+      const handleDownload2DMap = async () => {
+        try {
+          const response = await axios.get(
+            `http://localhost:3001/download/${id}/2dMap`, 
+            {
+              responseType: 'blob',
+            }
+          );
+
+          const blob = new Blob([response.data], { type: response.data.type });
+          const url = window.URL.createObjectURL(blob);
+
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', `2DMap_${id}.png`);
+
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } catch (error: any) {
+          console.error(error);
+       
+            setMapError('Error downloading map data');
+         
+        }
+      };
+
+
+      const handle2dMapVideo = async () => {
+        setMapOpenLoading2DVideo(true);
+        setMapVideoError(null);
+      try {
+        const response = await axios.get(`http://localhost:3001/pose/animated2dMap/${id}`);
+        if (response.status === 200 || response.status === 409) {
+            setMapVideoReady(true);
+        } 
+      } catch (error: any) {
+        if (error.response.status === 409) {
+          setMapVideoReady(true);
+            
+        } else {
+            setMapVideoError(error.response?.data?.message || 'Error fetching 2D map');
+        }
+      } finally {
+        setMapOpenLoading2DVideo(false);
+      }
+    };
+
+      
+      const handleDownload2DMapVideo = async () => {
+        try {
+          const response = await axios.get(
+            `http://localhost:3001/download/${id}/2dMapVideo`, 
+            {
+              responseType: 'blob',
+            }
+          );
+
+          const blob = new Blob([response.data], { type: response.data.type });
+          const url = window.URL.createObjectURL(blob);
+
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', `2DMap_${id}.mp4`);
+
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } catch (error: any) {
+          console.error(error);
+       
+            setMapVideoError('Error downloading map data');
+         
+        }
+      };
+
+
+    
+      
       const handleDownloadPoseData = async (type: string) => {
         try {
           const response = await axios.get(
@@ -286,7 +454,103 @@ export default function MatchCardButton({
             >
               <div className="py-1" role="none">
             
-                <div className="relative">
+               
+              <div className="relative">
+                  <button
+                    onClick={() => setIsMapOpen(!isMapOpen)}
+                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex justify-between items-center"
+                    role="menuitem"
+                  >
+                    2d Maps
+                    <svg
+                      className="ml-2 h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+
+                  {isMapOpen && (
+                    <div
+                      className="origin-top-left absolute left-full top-0 mt-0 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-30"
+                      role="menu"
+                      aria-orientation="vertical"
+                      aria-labelledby="velocity-submenu-button"
+                    >
+                      <div className="py-1" role="none">
+                       
+                        <button
+                          onClick={() => {
+                            handle2dMap();
+                          
+                          }}
+                          className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                          disabled={isMapOpenLoading2D}
+                        >
+                          {isVelocityLoadingLeft ? 'Processing 2D Map...' : 'Process 2D Map'}
+                        </button>
+
+                        {mapReady && (
+                          <div className="ml-4">
+                            <button
+                              onClick={() => handleDownload2DMap()}
+                              className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              role="menuitem"
+                            >
+                             Download 2D Map Video
+                            </button>
+                          </div>
+                        )}
+
+                        {mapError && (
+                          <div className="px-4 py-2 text-sm text-red-500">{mapError}</div>
+                        )}
+
+                      </div>
+                      
+            
+                      <button
+                        onClick={() => {
+                          handle2dMapVideo();
+                        
+                        }}
+                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                        disabled={isMapOpenLoading2DVideo}
+                      >
+                        {isVelocityLoadingLeft ? 'Processing 2D Map Video...' : 'Process 2D map Video'}
+                      </button>
+
+                      {mapVideoReady && (
+                        <div className="ml-4">
+                          <button
+                            onClick={() => handleDownload2DMapVideo()}
+                            className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            role="menuitem"
+                          >
+                          Download 2D Map Video
+                          </button>
+                        </div>
+                      )}
+
+                      {mapVideoError && (
+                        <div className="px-4 py-2 text-sm text-red-500">{mapVideoError}</div>
+                      )}
+
+                    </div>
+
+               
+                    
+                  )}
+             
+{/* --------------------------------------------------------------------------  */}
+               
+
                   <button
                     onClick={() => setIsPoseSubmenuOpen(!isPoseSubmenuOpen)}
                     className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex justify-between items-center"

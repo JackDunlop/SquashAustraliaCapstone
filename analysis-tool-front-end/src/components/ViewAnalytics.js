@@ -29,8 +29,8 @@ export default function ViewAnalytics({ baseUrl }) {
   const fetchVideoStream = async () => {           
     try {
        // 1. Generate Map
-       console.log(`Generating map: ${baseUrl}/pose/generateMap/${matchId}`); 
-       const respGenMap = await axios.get(`${baseUrl}/pose/generateMap/${matchId}`);      
+       console.log(`Generating map: ${baseUrl}/pose/display2dMap/${matchId}`);
+       const respGenMap = await axios.get(`${baseUrl}/pose/display2dMap/${matchId}`);      
       if (respGenMap.status === 200) {
         console.log("Map Request Successful"); 
         // 2. Stream

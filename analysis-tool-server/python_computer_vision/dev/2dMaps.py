@@ -7,6 +7,7 @@ import mapsController as maps
 import json
 import msgpack
 from poseEstimation import getMatchIDFromVideo
+import os
 
 width,height = 640, 975  # 6.4m x 9.75m
 
@@ -28,7 +29,7 @@ def plotLines():
     
     return fig, ax
 
-def visualizeHeatmap(heatmap):
+def visualizeHeatmap(heatmap,match_id):
     # Apply Gaussian blur to the heatmap data
     blurred_heatmap = maps.apply_gaussian_blur(heatmap)
     fig, ax = plotLines()
@@ -44,10 +45,16 @@ def visualizeHeatmap(heatmap):
     
     plt.title('Player Heatmap')
     plt.axis('off')
-    plt.show()
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, '..', '..', 'heatmap')
+    os.makedirs(output_dir, exist_ok=True)
+    filesave = os.path.join(output_dir, f'{match_id}.png')
+
+    plt.savefig(filesave)
+    #plt.show()
 
 # Image
-def display2dMap(movements, H):
+def display2dMap(movements, H,match_id):
     fig,ax = plotLines()    
     players = {}  
     for movement in movements:
@@ -65,16 +72,23 @@ def display2dMap(movements, H):
             }
     ax.legend(loc='upper right')
     ax.set_title('2D Movement Map')
-    plt.show()
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, '..', '..', '2dMap')
+    os.makedirs(output_dir, exist_ok=True)
+    filesave = os.path.join(output_dir, f'{match_id}.png')
+
+    plt.savefig(filesave)
+  #  plt.show()
 
 # Video
-def animate2dMap(transformed_movements, speedup_factor=1.0, buffer_factor=1.01):
+def animate2dMap(transformed_movements,match_id ,speedup_factor=1.0, buffer_factor=1.01):
     fig, ax = plotLines() 
 
     timestamps = [float(ts.rstrip('s')) for ts in sorted(transformed_movements.keys())]
    
     time_intervals = [(timestamps[i+1] - timestamps[i]) / speedup_factor * buffer_factor for i in range(len(timestamps) - 1)]
-    time_intervals.append(0.1 / speedup_factor * buffer_factor)  # Add a small delay for the last frame    
+    time_intervals.append(0.1 / speedup_factor * buffer_factor)  # Add a small delay for the last frame   
 
     all_track_ids = set()
     for movement_data in transformed_movements.values():
@@ -159,11 +173,26 @@ def animate2dMap(transformed_movements, speedup_factor=1.0, buffer_factor=1.01):
 
     total_frames = len(timestamps)
 
-    # Create the animation with the precomputed intervals
+    
     ani = animation.FuncAnimation(fig, update, frames=total_frames, interval=constant_interval, repeat=False)
 
     ax.legend()
-    plt.show()
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, '..', '..', '2dMapVideo')
+    os.makedirs(output_dir, exist_ok=True)
+
+    video_filename = os.path.join(output_dir, f'{match_id}.mp4')
+
+    # Save the animation
+    try:
+        ani.save(video_filename, writer='ffmpeg', fps=30, dpi=200)
+        print(f"Animation saved successfully at {video_filename}")
+    except Exception as e:
+        print(f"Failed to save animation: {e}")
+
+   # plt.show()
+
 
 def main(): 
     mapType = sys.argv[1]
@@ -209,16 +238,16 @@ def main():
 
     #  3 routes
     if(mapType == "display2dMap"): 
-        display2dMap(movements,H)
+        display2dMap(movements,H,match_id)
 
     elif(mapType == "animated2dMap"):
         transformed_movements = maps.movement_homography(movements,H)
-        animate2dMap(transformed_movements)
+        animate2dMap(transformed_movements,match_id)
 
     elif(mapType == "visualizeHeatmap"):
         court_positions = maps.map_movements_to_court(movements, H)    
         heatmap = maps.accumulate_heatmap(court_positions, width, height)      
-        visualizeHeatmap(heatmap)
+        visualizeHeatmap(heatmap,match_id)
     else:
         print("Something went wrong")
         sys.exit(1)

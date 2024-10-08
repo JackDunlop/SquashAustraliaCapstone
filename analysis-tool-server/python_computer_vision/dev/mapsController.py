@@ -2,7 +2,13 @@ import numpy as np
 import cv2
 
 image_width,image_height = 1280, 720
-
+def apply_gaussian_blur(heatmap, kernel_size=21):    
+    if kernel_size <= 0:
+        kernel_size = 21  # Default size
+    if kernel_size % 2 == 0:
+        kernel_size += 1  # Make kernel size odd if it is not
+    blurred_heatmap = cv2.GaussianBlur(heatmap, (kernel_size, kernel_size), 0)
+    return blurred_heatmap
 #  Set track_ids to only 1 or 2
 def assign_track_ids(data):        
     track_id_1_keypoints = None

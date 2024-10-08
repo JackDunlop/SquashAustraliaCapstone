@@ -22,14 +22,14 @@ const runPythonScript = (res, scriptName, args = [], inn = null) => {
       pythonProcess.stdin.end();
     });
   }
-  // let stdoutData = '';
-  // let stderrData = '';
-  // pythonProcess.stdout.on('data', (data) => {
-  //     const output = data.toString();
-  //     stdoutData += output;
-  //     console.log('Python STDOUT:', output);
-  //     //res.write(`data: ${output}\n\n`);
-  // });
+  let stdoutData = '';
+  let stderrData = '';
+  pythonProcess.stdout.on('data', (data) => {
+      const output = data.toString();
+      stdoutData += output;
+      console.log('Python STDOUT:', output);
+      //res.write(`data: ${output}\n\n`);
+  });
   pythonProcess.on('close', (code) => {
       if (code === 0) {
           console.log(`Script ${scriptName} executed successfully.`);
@@ -59,7 +59,7 @@ const findposeVideoFileMatchID = async (match_id) => {
   }
   return '';
 }
-const dataFileFormats = ['json','msgpack'];
+const dataFileFormats = ['json','msgpack','png','mp4'];
 const findDataFileMatchID = async (match_id, folderName) => {
   for (let fileFormat of dataFileFormats) {
       let _path = path.join(__dirname, `../${folderName}`, `${match_id}.${fileFormat}`);      
@@ -122,35 +122,80 @@ const stream = async (req, res, next) => {
 const twoDMaps = (mapType) => {  
   return async (req, res) => {
     const match_id = req.params.match_id;  
-    let msgpckPath, videoFilePath;
-    try {      
+   
+
+    try {
+      switch(mapType){
+        case 'display2dMap': {
+          const display2dMapFilePath = await findDataFileMatchID(match_id, "2dMap");
+          console.log(display2dMapFilePath);
+          if (display2dMapFilePath){
+         
+            return res.status(409).json({ message: `Data Already stored for ${match_id}` });
+          }
+          break;
+        }
+        case 'animated2dMap': {
+          const animated2dMapFilePath = await findDataFileMatchID(match_id, "2dMapVideo");
+          if (animated2dMapFilePath){
+          
+            return res.status(409).json({ message: `Data Already stored for ${match_id}` });
+          }
+          break;
+        }
+        case 'visualizeHeatmap': {
+          const visualizeHeatmapFilePath = await findDataFileMatchID(match_id, "Heatmap");
+          if (visualizeHeatmapFilePath){
+          
+            return res.status(409).json({ message: `Data Already stored for ${match_id}` });
+          }
+          break;
+        }
+        default:
+          console.log('Invalid mapType:', mapType);
+          return res.status(400).json({ message: `Invalid mapType: ${mapType}` });
+      }
+
+    
+
+      let msgpckPath, videoFilePath;
       const [result, err] = await util.handle(Match.findById(match_id));
       if (err || !result) {
+        console.log('Failed to get match.');
         return res.status(400).json('Failed to get match.');
       }
+
       const courtBounds = result.courtBounds;
       const courtDataPath = path.join(__dirname, '../python_computer_vision/courtData.json');     
       const courtLayout = JSON.stringify(courtBounds);      
+
       try {
         msgpckPath = await findDataFileMatchID(match_id, 'poseEstimationData');
         if (!msgpckPath) {
-          return res.status(400).json({ message: 'Data file not found' });
+         
+          return res.status(400).json({ message: 'Pose Estimation Data file not found' });
         }
       } catch (error) {
-        return res.status(500).json({ message: 'Error finding data file', error: error.message });
+     
+        return res.status(500).json({ message: 'Error finding Pose Estimation Data file', error: error.message });
       }      
+
       try {
         videoFilePath = await findposeVideoFileMatchID(match_id);
         if (!videoFilePath) {
+       
           return res.status(400).json({ message: 'Video file not found' });
         }
       } catch (error) {
+       
         return res.status(500).json({ message: 'Error finding video file', error: error.message });
-      }      
+      }
+
+      
       runPythonScript(res, '2dMaps.py', [mapType, msgpckPath, videoFilePath, courtDataPath], courtLayout);         
-     
+      
     } catch (error) {
-      console.error('Unexpected error:', error);
+   
       return res.status(500).json({ message: 'Unexpected error', error: error.message });
     }
   };

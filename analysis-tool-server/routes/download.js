@@ -192,6 +192,24 @@ router.get('/:match_id/:typeofdata', async (req, res) => {
             }
             downloadFile(fileHeatmapPath,res);
         break;
+        case "2dMap":
+            // search heatmapdata for file with match id
+            const Map = "2dMap";   // folder unknown right now
+            const file2dMapPath = await findFile(match_id, Map); 
+            if (!file2dMapPath) {
+            return res.status(404).json({ error: true, message: 'File not found' });
+            }
+            downloadFile(file2dMapPath,res);
+        break;
+        case "2dMapVideo":
+            // search heatmapdata for file with match id
+            const MapVideo = "2dMapVideo";   // folder unknown right now
+            const file2dMapVideoPath = await findFile(match_id, MapVideo); 
+            if (!file2dMapVideoPath) {
+            return res.status(404).json({ error: true, message: 'File not found' });
+            }
+            downloadFile(file2dMapVideoPath,res);
+        break;
         case "velocity":
             // search wristDataChart for file with match id
             const wristFolder = "wristDataChart";   

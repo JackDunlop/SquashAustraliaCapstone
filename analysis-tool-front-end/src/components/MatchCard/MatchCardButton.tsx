@@ -556,7 +556,7 @@ export default function MatchCardButton({
                               className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               role="menuitem"
                             >
-                             Download 2D Map Video
+                             Download 2D Map
                             </button>
                           </div>
                         )}

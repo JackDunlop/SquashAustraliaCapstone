@@ -35,6 +35,10 @@ export default function MatchCardButton({
   const [mapVideoReady, setMapVideoReady] = useState(false);
   const [mapVideoError, setMapVideoError] = useState<string | null>(null);
 
+  const [isMapOpenLoadingHeatmap, setMapOpenLoadingHeatmap] = useState(false);
+  const [heatmapReady, setHeatmapReady] = useState(false);
+  const [heatmapError, setHeatmapError] = useState<string | null>(null);
+
 
   const [isVelocitySubmenuOpen, setIsVelocitySubmenuOpen] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
@@ -390,6 +394,56 @@ export default function MatchCardButton({
       };
 
 
+      const handleHeatmap = async () => {
+        setMapOpenLoadingHeatmap(true);
+        setHeatmapError(null);
+      try {
+        const response = await axios.get(`http://localhost:3001/pose/visualizeHeatmap/${id}`);
+        if (response.status === 200 || response.status === 409) {
+            setHeatmapReady(true);
+        } 
+      } catch (error: any) {
+        if (error.response.status === 409) {
+          setHeatmapReady(true);
+            
+        } else {
+            setHeatmapError(error.response?.data?.message || 'Error fetching Heatmap');
+        }
+      } finally {
+        setMapOpenLoadingHeatmap(false);
+      }
+    };
+
+      
+      const handleDownloadHeatmap = async () => {
+        try {
+          const response = await axios.get(
+            `http://localhost:3001/download/${id}/heatmap`, 
+            {
+              responseType: 'blob',
+            }
+          );
+
+          const blob = new Blob([response.data], { type: response.data.type });
+          const url = window.URL.createObjectURL(blob);
+
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', `Heatmap_${id}.png`);
+
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } catch (error: any) {
+          console.error(error);
+       
+            setHeatmapError('Error downloading map data');
+         
+        }
+      };
+
+
     
       
       const handleDownloadPoseData = async (type: string) => {
@@ -541,6 +595,37 @@ export default function MatchCardButton({
                       {mapVideoError && (
                         <div className="px-4 py-2 text-sm text-red-500">{mapVideoError}</div>
                       )}
+
+{/* --------------------------------------------------------------------------  */}
+
+<button
+                        onClick={() => {
+                          handleHeatmap();
+                        
+                        }}
+                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                        disabled={isMapOpenLoadingHeatmap}
+                      >
+                        {isVelocityLoadingLeft ? 'Processing Heatmap...' : 'Process Heatmap'}
+                      </button>
+
+                      {heatmapReady && (
+                        <div className="ml-4">
+                          <button
+                            onClick={() => handleDownloadHeatmap()}
+                            className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            role="menuitem"
+                          >
+                          Download Heatmap
+                          </button>
+                        </div>
+                      )}
+
+                      {mapVideoError && (
+                        <div className="px-4 py-2 text-sm text-red-500">{heatmapReady}</div>
+                      )}
+
 
                     </div>
 

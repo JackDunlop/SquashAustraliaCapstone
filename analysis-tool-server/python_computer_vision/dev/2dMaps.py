@@ -29,7 +29,7 @@ def plotLines():
     
     return fig, ax
 
-def visualizeHeatmap(heatmap):
+def visualizeHeatmap(heatmap,match_id):
     # Apply Gaussian blur to the heatmap data
     blurred_heatmap = maps.apply_gaussian_blur(heatmap)
     fig, ax = plotLines()
@@ -45,7 +45,13 @@ def visualizeHeatmap(heatmap):
     
     plt.title('Player Heatmap')
     plt.axis('off')
-    plt.show()
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, '..', '..', 'heatmap')
+    os.makedirs(output_dir, exist_ok=True)
+    filesave = os.path.join(output_dir, f'{match_id}.png')
+
+    plt.savefig(filesave)
+    #plt.show()
 
 # Image
 def display2dMap(movements, H,match_id):
@@ -241,7 +247,7 @@ def main():
     elif(mapType == "visualizeHeatmap"):
         court_positions = maps.map_movements_to_court(movements, H)    
         heatmap = maps.accumulate_heatmap(court_positions, width, height)      
-        visualizeHeatmap(heatmap)
+        visualizeHeatmap(heatmap,match_id)
     else:
         print("Something went wrong")
         sys.exit(1)

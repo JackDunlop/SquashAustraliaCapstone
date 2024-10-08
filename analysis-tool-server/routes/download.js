@@ -185,7 +185,7 @@ router.get('/:match_id/:typeofdata', async (req, res) => {
         break;
         case "heatmap":
             // search heatmapdata for file with match id
-            const heatmap = "heatmapdata";   // folder unknown right now
+            const heatmap = "heatmap";   // folder unknown right now
             const fileHeatmapPath = await findFile(match_id, heatmap); 
             if (!fileHeatmapPath) {
             return res.status(404).json({ error: true, message: 'File not found' });

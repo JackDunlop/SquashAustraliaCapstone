@@ -166,8 +166,9 @@ const twoDMaps = (mapType) => {
       }
 
       const courtBounds = result.courtBounds;
-      const courtDataPath = path.join(__dirname, '../python_computer_vision/courtData.json');     
+      const players = result.players   
       const courtLayout = JSON.stringify(courtBounds);      
+      const playersJson = JSON.stringify(players)      
 
       try {
         msgpckPath = await findDataFileMatchID(match_id, 'poseEstimationData');
@@ -192,7 +193,7 @@ const twoDMaps = (mapType) => {
       }
 
       
-      runPythonScript(res, '2dMaps.py', [mapType, msgpckPath, videoFilePath, courtDataPath], courtLayout);         
+      runPythonScript(res, '2dMaps.py', [mapType, msgpckPath, videoFilePath, playersJson], courtLayout);         
       
     } catch (error) {
    

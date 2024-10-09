@@ -85,9 +85,9 @@ def get_video_dimensions(videoPath):
     return width, height
 
 # Stores instance of Map
-class HeatMap:
+class HeatMap:      
     def __init__(self,match_id): 
-        self.maps = {}               
+        self.maps = {}                     
         if match_id is not None:
             self.maps[match_id] = {}
 
@@ -105,8 +105,9 @@ class HeatMap:
         self.maps[match_id]['CourtLengths'] = lengths
 
     def getCourtsize(self, match_id):         
-        return self.maps.get(match_id, {}).get('CourtLengths')
-
+        return self.maps.get(match_id, {}).get('CourtLengths')  
+    
+    
 # Resize image size to video size
 def resize_coordinates(courtBounds, image_width, image_height, video_width, video_height):    
     scale_width = video_width / image_width
@@ -304,19 +305,17 @@ def apply_homography(H, points):
 def movement_homography(movements, H):
     transformed_movements = {}
 
-    for movement in movements:
+    for movement in movements:  
         track_id = movement['track_id']
-        timestamp = movement['timestamp']
-        
+        timestamp = movement['timestamp']  
+
         if timestamp not in transformed_movements:
-            transformed_movements[timestamp] = {}
-       
+            transformed_movements[timestamp] = {}       
         midpoint = np.array([movement['mid_point']], dtype=float)
-        transformed_midpoint = apply_homography(H, midpoint).flatten().tolist()
-
-        # Store the track_id and its transformed midpoint under the corresponding timestamp
+        
+        transformed_midpoint = apply_homography(H, midpoint).flatten().tolist()        
         transformed_movements[timestamp][track_id] = transformed_midpoint
-
+    
     return transformed_movements
 
 def map_movements_to_court(movements, homography_matrix):

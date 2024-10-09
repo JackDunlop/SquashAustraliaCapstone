@@ -111,6 +111,7 @@ def main():
                 "timestamp": entry['timestamp'], 
                 'angles': extractedData
             })
+    
 
     saveData(dataPath, angleDataList)
     
